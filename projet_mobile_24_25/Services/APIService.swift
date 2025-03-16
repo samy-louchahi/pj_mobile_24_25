@@ -140,6 +140,97 @@ class APIService {
             }
             .eraseToAnyPublisher()
     }
+    func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
+        guard let url = URL(string: baseURL + endpoint) else {
+            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let encodedBody = try JSONEncoder().encode(body)
+            request.httpBody = encodedBody
+        } catch {
+            return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
+        }
+
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap { data, response -> Data in
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                        case 200...299:
+                            return data
+                        case 401:
+                            throw APIError.unauthorized
+                        case 403:
+                            throw APIError.forbidden
+                        default:
+                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                    }
+                }
+                return data
+            }
+            .mapError { error -> APIError in
+                if let apiError = error as? APIError {
+                    return apiError
+                } else {
+                    return .networkError(error)
+                }
+            }
+            .decode(type: T.self, decoder: JSONDecoder())
+            .mapError { error -> APIError in
+                if let decodingError = error as? DecodingError {
+                    return .decodingError(decodingError)
+                } else {
+                    return (error as? APIError) ?? .unknown
+                }
+            }
+            .eraseToAnyPublisher()
+    }
+    func delete(_ endpoint: String) -> AnyPublisher<Void, APIError> {
+        guard let url = URL(string: baseURL + endpoint) else {
+            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap { data, response -> Void in
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                        case 200...299:
+                            return ()
+                        case 401:
+                            throw APIError.unauthorized
+                        case 403:
+                            throw APIError.forbidden
+                        default:
+                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                    }
+                }
+                return ()
+            }
+            .mapError { error -> APIError in
+                if let apiError = error as? APIError {
+                    return apiError
+                } else {
+                    return .networkError(error)
+                }
+            }
+            .eraseToAnyPublisher()
+    }
     
     // Etc. (PUT, DELETE, upload CSV, etc.)
     
