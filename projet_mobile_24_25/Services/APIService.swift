@@ -295,4 +295,165 @@ class APIService {
             }
             .eraseToAnyPublisher()
     }
+    func postMultipart<T: Decodable>(
+            _ endpoint: String,
+            formDataParts: [FormDataPart]
+        ) -> AnyPublisher<T, APIError> {
+            guard let url = URL(string: baseURL + endpoint) else {
+                return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+
+            // Boundary
+            let boundary = "Boundary-\(UUID().uuidString)"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+            // Token
+            if let token = getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+
+            // Construire le body
+            var body = Data()
+            
+            for part in formDataParts {
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+
+                switch part {
+                case .text(let name, let value):
+                    // Content-Disposition: form-data; name="..."
+                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
+                    body.append(disposition.data(using: .utf8)!)
+                    body.append("\(value)\r\n".data(using: .utf8)!)
+
+                case .file(let name, let fileName, let mimeType, let data):
+                    // Content-Disposition: form-data; name="..."; filename="..."
+                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
+                    body.append(disposition.data(using: .utf8)!)
+                    body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+                    body.append(data)
+                    body.append("\r\n".data(using: .utf8)!)
+                }
+            }
+
+            // Fin
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+            request.httpBody = body
+
+            return URLSession.shared.dataTaskPublisher(for: request)
+                .tryMap { data, response -> Data in
+                    if let httpResponse = response as? HTTPURLResponse {
+                        switch httpResponse.statusCode {
+                        case 200...299:
+                            return data
+                        case 401:
+                            throw APIError.unauthorized
+                        case 403:
+                            throw APIError.forbidden
+                        default:
+                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
+                    }
+                    return data
+                }
+                .mapError { error -> APIError in
+                    if let apiError = error as? APIError {
+                        return apiError
+                    } else {
+                        return .networkError(error)
+                    }
+                }
+                .decode(type: T.self, decoder: JSONDecoder())
+                .mapError { error -> APIError in
+                    if let decodingError = error as? DecodingError {
+                        return .decodingError(decodingError)
+                    } else {
+                        return (error as? APIError) ?? .unknown
+                    }
+                }
+                .eraseToAnyPublisher()
+        }
+
+        /// Pareil pour PUT (si tu veux update en multipart)
+        func putMultipart<T: Decodable>(
+            _ endpoint: String,
+            formDataParts: [FormDataPart]
+        ) -> AnyPublisher<T, APIError> {
+            // Identique à postMultipart, sauf qu’on met `request.httpMethod = "PUT"`
+            // (et éventuellement on gère la réponse différemment)
+            
+            guard let url = URL(string: baseURL + endpoint) else {
+                return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "PUT"
+
+            let boundary = "Boundary-\(UUID().uuidString)"
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+            if let token = getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+
+            var body = Data()
+
+            for part in formDataParts {
+                body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                switch part {
+                case .text(let name, let value):
+                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
+                    body.append(disposition.data(using: .utf8)!)
+                    body.append("\(value)\r\n".data(using: .utf8)!)
+                case .file(let name, let fileName, let mimeType, let data):
+                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
+                    body.append(disposition.data(using: .utf8)!)
+                    body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+                    body.append(data)
+                    body.append("\r\n".data(using: .utf8)!)
+                }
+            }
+
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            request.httpBody = body
+
+            return URLSession.shared.dataTaskPublisher(for: request)
+                .tryMap { data, response -> Data in
+                    if let httpResponse = response as? HTTPURLResponse {
+                        switch httpResponse.statusCode {
+                        case 200...299:
+                            return data
+                        case 401:
+                            throw APIError.unauthorized
+                        case 403:
+                            throw APIError.forbidden
+                        default:
+                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
+                    }
+                    return data
+                }
+                .mapError { error -> APIError in
+                    if let apiError = error as? APIError {
+                        return apiError
+                    } else {
+                        return .networkError(error)
+                    }
+                }
+                .decode(type: T.self, decoder: JSONDecoder())
+                .mapError { error -> APIError in
+                    if let decodingError = error as? DecodingError {
+                        return .decodingError(decodingError)
+                    } else {
+                        return (error as? APIError) ?? .unknown
+                    }
+                }
+                .eraseToAnyPublisher()
+        }
 }
+
+/// Représente un champ de formulaire ou un fichier dans une requête multipart
+
