@@ -23,7 +23,7 @@ struct SellerListView: View {
                 } else if viewModel.sellers.isEmpty {
                     // Équivalent du "aucun vendeur trouvé"
                     VStack(spacing: 10) {
-                        Text("Aucun vendeur trouvé")
+                        Text("Aucun vendeur trouvé c'est tarpin triste ")
                             .font(.title2)
                             .bold()
                         Text("Ajoutez un vendeur pour commencer à gérer ses dépôts et ventes.")

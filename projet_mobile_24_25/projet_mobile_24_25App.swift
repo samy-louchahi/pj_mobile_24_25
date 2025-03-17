@@ -9,9 +9,19 @@ import SwiftUI
 
 @main
 struct projet_mobile_24_25App: App {
+    @StateObject private var authViewModel = AuthViewModel()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if authViewModel.isLoggedIn {
+                            // Utilisateur connecté
+                            MainTabView()
+                                .environmentObject(authViewModel)
+                        } else {
+                            // Écran de connexion
+                            LoginView()
+                                .environmentObject(authViewModel)
+                        }
         }
     }
 }

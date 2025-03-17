@@ -97,6 +97,15 @@ class AuthViewModel: ObservableObject {
             }
             .store(in: &self.cancellables)
     }
+    func logout() {
+        UserDefaults.standard.removeObject(forKey: "token")
+        isLoggedIn = false
+        email = ""
+        username = ""
+        password = ""
+        errorMessage = nil
+        isLoading = false
+    }
 }
 
 /// La réponse JSON attendue après le login (token)

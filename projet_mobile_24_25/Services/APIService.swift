@@ -33,25 +33,23 @@ class APIService {
 
     /// Exemple de méthode GET générique
     func get<T: Decodable>(_ endpoint: String) -> AnyPublisher<T, APIError> {
-        guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        // Ajouter le header JSON
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Ajouter le token si présent
-        if let token = getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Data in
-                // Vérifier le code HTTP pour gérer 401,403
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
+            guard let url = URL(string: baseURL + endpoint) else {
+                return Fail(error: .invalidURL).eraseToAnyPublisher()
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            if let token = getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            
+            let decoder = Self.customJSONDecoder()
+            
+            return URLSession.shared.dataTaskPublisher(for: request)
+                .tryMap { data, response -> Data in
+                    if let httpResponse = response as? HTTPURLResponse {
+                        switch httpResponse.statusCode {
                         case 200...299:
                             return data
                         case 401:
@@ -60,57 +58,55 @@ class APIService {
                             throw APIError.forbidden
                         default:
                             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
+                    }
+                    return data
+                }
+                .mapError { error -> APIError in
+                    if let apiError = error as? APIError {
+                        return apiError
+                    } else {
+                        return .networkError(error)
                     }
                 }
-                return data
-            }
-            .mapError { error -> APIError in
-                // Transformer l'erreur Combine en erreur APIError
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
+                .decode(type: T.self, decoder: decoder)
+                .mapError { error -> APIError in
+                    if let decodingError = error as? DecodingError {
+                        return .decodingError(decodingError)
+                    } else {
+                        return (error as? APIError) ?? .unknown
+                    }
                 }
+                .eraseToAnyPublisher()
+        }
+        
+        func post<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
+            guard let url = URL(string: baseURL + endpoint) else {
+                return Fail(error: .invalidURL).eraseToAnyPublisher()
             }
-            .decode(type: T.self, decoder: JSONDecoder()) // Décodage JSON -> T
-            .mapError { error -> APIError in
-                if let decodingError = error as? DecodingError {
-                    return .decodingError(decodingError)
-                } else {
-                    return (error as? APIError) ?? .unknown
-                }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            if let token = getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
-            .eraseToAnyPublisher()
-    }
-
-    /// Exemple de méthode POST générique (pour créer ou mettre à jour une ressource)
-    func post<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
-        guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        // Ajouter le header JSON
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Ajouter le token si présent
-        if let token = getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        do {
-            // Encoder le body en JSON
-            let encodedBody = try JSONEncoder().encode(body)
-            request.httpBody = encodedBody
-        } catch {
-            return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
-        }
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Data in
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
+            
+            let encoder = Self.customJSONEncoder()
+            let decoder = Self.customJSONDecoder()
+            
+            do {
+                let encodedBody = try encoder.encode(body)
+                request.httpBody = encodedBody
+            } catch {
+                return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
+            }
+            
+            return URLSession.shared.dataTaskPublisher(for: request)
+                .tryMap { data, response -> Data in
+                    if let httpResponse = response as? HTTPURLResponse {
+                        switch httpResponse.statusCode {
                         case 200...299:
                             return data
                         case 401:
@@ -119,51 +115,55 @@ class APIService {
                             throw APIError.forbidden
                         default:
                             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
+                    }
+                    return data
+                }
+                .mapError { error -> APIError in
+                    if let apiError = error as? APIError {
+                        return apiError
+                    } else {
+                        return .networkError(error)
                     }
                 }
-                return data
-            }
-            .mapError { error -> APIError in
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
+                .decode(type: T.self, decoder: decoder)
+                .mapError { error -> APIError in
+                    if let decodingError = error as? DecodingError {
+                        return .decodingError(decodingError)
+                    } else {
+                        return (error as? APIError) ?? .unknown
+                    }
                 }
+                .eraseToAnyPublisher()
+        }
+        
+        func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
+            guard let url = URL(string: baseURL + endpoint) else {
+                return Fail(error: .invalidURL).eraseToAnyPublisher()
             }
-            .decode(type: T.self, decoder: JSONDecoder())
-            .mapError { error -> APIError in
-                if let decodingError = error as? DecodingError {
-                    return .decodingError(decodingError)
-                } else {
-                    return (error as? APIError) ?? .unknown
-                }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "PUT"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let token = getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
-            .eraseToAnyPublisher()
-    }
-    func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
-        guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-        }
+            
+            let encoder = Self.customJSONEncoder()
+            let decoder = Self.customJSONDecoder()
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            do {
+                let encodedBody = try encoder.encode(body)
+                request.httpBody = encodedBody
+            } catch {
+                return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
+            }
 
-        if let token = getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        do {
-            let encodedBody = try JSONEncoder().encode(body)
-            request.httpBody = encodedBody
-        } catch {
-            return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
-        }
-
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Data in
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
+            return URLSession.shared.dataTaskPublisher(for: request)
+                .tryMap { data, response -> Data in
+                    if let httpResponse = response as? HTTPURLResponse {
+                        switch httpResponse.statusCode {
                         case 200...299:
                             return data
                         case 401:
@@ -172,27 +172,27 @@ class APIService {
                             throw APIError.forbidden
                         default:
                             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
+                    }
+                    return data
+                }
+                .mapError { error -> APIError in
+                    if let apiError = error as? APIError {
+                        return apiError
+                    } else {
+                        return .networkError(error)
                     }
                 }
-                return data
-            }
-            .mapError { error -> APIError in
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
+                .decode(type: T.self, decoder: decoder)
+                .mapError { error -> APIError in
+                    if let decodingError = error as? DecodingError {
+                        return .decodingError(decodingError)
+                    } else {
+                        return (error as? APIError) ?? .unknown
+                    }
                 }
-            }
-            .decode(type: T.self, decoder: JSONDecoder())
-            .mapError { error -> APIError in
-                if let decodingError = error as? DecodingError {
-                    return .decodingError(decodingError)
-                } else {
-                    return (error as? APIError) ?? .unknown
-                }
-            }
-            .eraseToAnyPublisher()
-    }
+                .eraseToAnyPublisher()
+        }
     func delete(_ endpoint: String) -> AnyPublisher<Void, APIError> {
         guard let url = URL(string: baseURL + endpoint) else {
             return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
@@ -453,7 +453,54 @@ class APIService {
                 }
                 .eraseToAnyPublisher()
         }
+    private static func customJSONDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+
+        // Crée un ISO8601DateFormatter qui gère les fractions de seconde
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [
+            .withInternetDateTime,
+            .withFractionalSeconds  // crucial pour ".000Z"
+        ]
+        
+        decoder.dateDecodingStrategy = .custom { decoder in
+            // Récupérer la chaîne brute
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Tenter la conversion via isoFormatter
+            guard let date = isoFormatter.date(from: dateString) else {
+                throw DecodingError.dataCorrupted(
+                    DecodingError.Context(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Invalid date: \(dateString)"
+                    )
+                )
+            }
+            return date
+        }
+
+        return decoder
+    }
+
+    private static func customJSONEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [
+            .withInternetDateTime,
+            .withFractionalSeconds
+        ]
+
+        // On définit une stratégie .custom pour l'encodage
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            let dateString = isoFormatter.string(from: date)
+            var container = encoder.singleValueContainer()
+            try container.encode(dateString)
+        }
+
+        return encoder
+    }
 }
 
-/// Représente un champ de formulaire ou un fichier dans une requête multipart
 

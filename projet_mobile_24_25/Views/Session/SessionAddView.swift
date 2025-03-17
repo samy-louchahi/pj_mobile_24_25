@@ -11,23 +11,33 @@ import SwiftUI
 /// Vue pour ajouter une nouvelle session
 struct SessionAddView: View {
     @ObservedObject var viewModel: SessionViewModel
-
+    init(viewModel: SessionViewModel) {
+        self.viewModel = viewModel
+        self.name = name
+        self.startDate = startDate
+        self.endDate = endDate
+        self.fees = fees
+        self.commission = commission
+        self.errorMessage = errorMessage
+    }
     // Champs
     @State private var name: String = ""
-    @State private var startDate: String = ""
-    @State private var endDate: String = ""
+    @State private var startDate: Date = nil ?? Date()
+    @State private var endDate: Date = nil ?? Date()
     @State private var fees: Double = 0
     @State private var commission: Double = 0
 
     @State private var errorMessage: String?
+    
+    
 
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Nouvelle Session")) {
                     TextField("Nom", text: $name)
-                    DatePickerField(label: "Date de Début", dateString: $startDate)
-                    DatePickerField(label: "Date de Fin", dateString: $endDate)
+                    DatePicker("Date de début", selection: $startDate)
+                    DatePicker("Date de fin", selection: $endDate)
                     TextField("Frais (%)", value: $fees, format: .number)
                         .keyboardType(.decimalPad)
                     TextField("Commission (%)", value: $commission, format: .number)
@@ -40,7 +50,7 @@ struct SessionAddView: View {
                 }
 
                 Button("Ajouter") {
-                    if name.isEmpty || startDate.isEmpty || endDate.isEmpty {
+                    if name.isEmpty {
                         errorMessage = "Veuillez remplir tous les champs requis."
                         return
                     }

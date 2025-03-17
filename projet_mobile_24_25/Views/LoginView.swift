@@ -76,7 +76,7 @@ struct LoginView: View {
                 if viewModel.isLoggedIn {
                     // Méthode 1 : on affiche un NavigationLink invisible pour "pousser" vers l'écran principal
                     NavigationLink(
-                        destination: ContentView(), // Remplace par ta vue principale
+                        destination: MainTabView(),
                         isActive: $viewModel.isLoggedIn
                     ) {
                         EmptyView()

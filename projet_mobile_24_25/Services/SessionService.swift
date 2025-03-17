@@ -10,8 +10,8 @@ import Combine
 
 struct SessionCreate: Codable {
     let name: String
-    let start_date: String
-    let end_date: String
+    let start_date: Date
+    let end_date: Date
     let fees: Double
     let commission: Double
     // status ? Si besoin
