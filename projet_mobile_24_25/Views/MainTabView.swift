@@ -32,8 +32,12 @@ struct MainTabView: View {
                     Image(systemName: "cursorarrow.click.badge.clock")
                     Text("Sessions")
                 }
-
-            // etc. 
+            DepositListView()
+                .tabItem {
+                    Image(systemName: "archivebox.fill")
+                    Text("Dépôts")
+                }
+            // etc.
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

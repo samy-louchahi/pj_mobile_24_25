@@ -11,8 +11,8 @@ import Foundation
 /// Petit struct pour un exemplaire JSON (si tu utilises un type plus précis qu’un simple dictionnaire).
 /// Par exemple, l'attribut "exemplaires" est un JSON qui peut représenter un ensemble d'exemplaires.
 struct Exemplaire: Codable {
-    let price: Double?
-    let state: String?
+    var price: Double?
+    var state: String?
 }
 
 /// Représente un lien entre un dépôt et un jeu (table: deposit_games).

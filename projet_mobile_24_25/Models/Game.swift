@@ -9,7 +9,7 @@
 import Foundation
 
 /// Représente un jeu (table: games).
-struct Game: Codable, Identifiable {
+struct Game: Codable, Identifiable, Hashable {
     let gameId: Int
     var id: Int { gameId }
 
@@ -20,7 +20,7 @@ struct Game: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case gameId     = "game_id"
-        case name
+        case name       = "name"
         case publisher
         case description
         case picture
