@@ -19,12 +19,19 @@ struct Stock: Codable, Identifiable {
     let initialQuantity: Int
     let currentQuantity: Int
 
+    var session: Session?
+    var seller: Seller?
+    var game: Game?
+
     enum CodingKeys: String, CodingKey {
-        case stockId         = "stock_id"
-        case sessionId       = "session_id"
-        case sellerId        = "seller_id"
-        case gameId          = "game_id"
+        case stockId = "stock_id"
+        case sessionId = "session_id"
+        case sellerId = "seller_id"
+        case gameId = "game_id"
         case initialQuantity = "initial_quantity"
         case currentQuantity = "current_quantity"
+        case session = "Session"
+        case seller = "Seller"
+        case game = "Game"
     }
 }

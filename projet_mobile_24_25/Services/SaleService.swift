@@ -73,7 +73,8 @@ class SaleService {
     
     /// Récupère toutes les ventes avec leurs détails
     func getAllSales() async throws -> [Sale] {
-        return try await apiService.get("/sales")
+        let sales: [Sale] = try await apiService.get("/sales")
+        return sales
     }
     
     /// Récupère une vente par ID

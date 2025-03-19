@@ -20,20 +20,19 @@ struct DepositGame: Codable, Identifiable {
     let depositGameId: Int
     var id: Int { depositGameId }
 
-    let fees: Double
     let depositId: Int
     let gameId: Int
+    let fees: Double
 
-    /// Ce champ est un JSON dans ta DB.  
-    /// Selon ta structure, ça peut être un tableau, un dictionnaire, etc.
-    let exemplaires: [String: Exemplaire]?
-    // ou let exemplaires: [Exemplaire]?  // selon la forme réelle des données
-    
+    var exemplaires: [String: Exemplaire]? // Un dictionnaire d'exemplaires
+    var game: Game?   // Relation avec le jeu
+
     enum CodingKeys: String, CodingKey {
         case depositGameId = "deposit_game_id"
+        case depositId = "deposit_id"
+        case gameId = "game_id"
         case fees
-        case depositId     = "deposit_id"
-        case gameId        = "game_id"
         case exemplaires
+        case game = "Game"
     }
 }

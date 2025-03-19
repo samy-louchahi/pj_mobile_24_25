@@ -42,7 +42,13 @@ struct MainTabView: View {
                     Image(systemName: "shippingbox.fill")
                     Text("Stock")
                 }
-        
+            SaleView()
+                .tabItem {
+                    Image(systemName: "dollarsign.arrow.trianglehead.counterclockwise.rotate.90")
+                    Text("Ventes")
+                }
+                
+            
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

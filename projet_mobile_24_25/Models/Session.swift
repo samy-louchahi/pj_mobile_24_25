@@ -21,10 +21,10 @@ struct Session: Codable, Identifiable {
     let commission: Double
 
     enum CodingKeys: String, CodingKey {
-        case sessionId  = "session_id"
+        case sessionId = "session_id"
         case name
-        case startDate  = "start_date"
-        case endDate    = "end_date"
+        case startDate = "start_date"
+        case endDate = "end_date"
         case status
         case fees
         case commission

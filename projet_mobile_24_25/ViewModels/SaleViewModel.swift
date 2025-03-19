@@ -104,3 +104,28 @@ class SaleViewModel: ObservableObject {
         loading = false
     }
 }
+extension SaleViewModel {
+    func depositGamesForSale(sellerId: Int?, sessionId: Int?) -> [DepositGame] {
+        guard let sellerId = sellerId, let sessionId = sessionId else { return [] }
+
+        var depositIdToSellerId: [Int: Int] = [:]
+        var depositIdToSessionId: [Int: Int] = [:]
+
+        for deposit in deposits {
+            depositIdToSellerId[deposit.depositId] = deposit.sellerId
+            depositIdToSessionId[deposit.depositId] = deposit.sessionId
+        }
+
+        return depositGames.filter { dg in
+            let depositId: Int = dg.depositId
+
+            let sId = depositIdToSellerId[depositId]
+            let sessId = depositIdToSessionId[depositId]
+
+            guard sId == sellerId, sessId == sessionId else { return false }
+
+            let availableCount = dg.exemplaires?.count ?? 0
+            return availableCount > 0
+        }
+    }
+}

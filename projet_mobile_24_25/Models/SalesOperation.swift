@@ -8,22 +8,19 @@
 
 import Foundation
 
-/// Reprend le même type SaleStatus si tu le souhaites,  
-/// ou en crée un deuxième si tu veux des nuances différentes.
-enum SalesOpStatus: String, Codable {
+enum SalesOpStatus: String, Codable, CaseIterable {
     case enCours  = "en cours"
     case finalise = "finalisé"
     case annule   = "annulé"
 }
 
-/// Représente une opération associée à une vente (table: sale_operations).
 struct SalesOperation: Codable, Identifiable {
     let salesOpId: Int
     var id: Int { salesOpId }
 
     let saleId: Int
     let commission: Double
-    let saleDate: Date
+    let saleDate: String
     let saleStatus: SalesOpStatus
 
     enum CodingKeys: String, CodingKey {
@@ -32,5 +29,14 @@ struct SalesOperation: Codable, Identifiable {
         case commission
         case saleDate   = "sale_date"
         case saleStatus = "sale_status"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.salesOpId = try container.decode(Int.self, forKey: .salesOpId)
+        self.saleId = try container.decode(Int.self, forKey: .saleId)
+        self.commission = try container.decode(Double.self, forKey: .commission)
+        self.saleDate = try container.decode(String.self, forKey: .saleDate)
+        self.saleStatus = try container.decode(SalesOpStatus.self, forKey: .saleStatus)
     }
 }

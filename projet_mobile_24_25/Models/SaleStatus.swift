@@ -6,7 +6,7 @@
 //
 
 
-enum SaleStatus: String, Codable {
+enum SaleStatus: String, Codable, CaseIterable {
     case enCours    = "en cours"
     case finalise   = "finalisé"
     case annule     = "annulé"

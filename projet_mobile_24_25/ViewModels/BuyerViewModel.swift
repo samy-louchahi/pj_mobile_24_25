@@ -72,19 +72,15 @@ class BuyerViewModel: ObservableObject {
             return
         }
         errorMessage = nil
-
         let body = BuyerCreate(name: name, email: email, phone: phone, address: address)
-
         do {
             if let existing = editingBuyer {
-                // Update
                 _ = try await buyerService.updateBuyer(existing.id, body)
             } else {
-                // Create
                 _ = try await buyerService.createBuyer(body)
             }
             closeForm()
-            await fetchBuyers() // Recharger la liste après modification
+            await fetchBuyers()
         } catch {
             errorMessage = "Erreur : \(error.localizedDescription)"
         }
@@ -94,7 +90,7 @@ class BuyerViewModel: ObservableObject {
     func deleteBuyer(_ buyer: Buyer) async {
         do {
             try await buyerService.deleteBuyer(buyer.id)
-            buyers.removeAll { $0.id == buyer.id } // Mise à jour locale
+            buyers.removeAll { $0.id == buyer.id }
         } catch {
             errorMessage = "Erreur suppression : \(error.localizedDescription)"
         }
