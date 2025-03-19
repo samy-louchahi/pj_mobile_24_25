@@ -501,6 +501,44 @@ class APIService {
 
         return encoder
     }
+    func getRaw(_ endpoint: String) -> AnyPublisher<Data, APIError> {
+        guard let url = URL(string: baseURL + endpoint) else {
+            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap { data, response -> Data in
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                    case 200...299:
+                        return data
+                    case 401:
+                        throw APIError.unauthorized
+                    case 403:
+                        throw APIError.forbidden
+                    default:
+                        throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+                    }
+                }
+                return data
+            }
+            .mapError { error -> APIError in
+                if let apiError = error as? APIError {
+                    return apiError
+                } else {
+                    return .networkError(error)
+                }
+            }
+            .eraseToAnyPublisher()
+    }
 }
 
 

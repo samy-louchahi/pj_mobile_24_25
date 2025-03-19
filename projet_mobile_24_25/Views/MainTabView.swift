@@ -37,7 +37,12 @@ struct MainTabView: View {
                     Image(systemName: "archivebox.fill")
                     Text("Dépôts")
                 }
-            // etc.
+            StockView()
+                .tabItem {
+                    Image(systemName: "shippingbox.fill")
+                    Text("Stock")
+                }
+        
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

@@ -34,7 +34,6 @@ struct DepositGameEntryCardView: View {
             ForEach(Array(entry.exemplaires.keys.sorted()), id: \.self) { key in
                 if let ex = entry.exemplaires[key] {
                     HStack {
-                        Text("Prix: ")
                         TextField("Prix", value: Binding(
                             get: { ex.price ?? 0 },
                             set: { newPrice in
@@ -44,7 +43,6 @@ struct DepositGameEntryCardView: View {
                             }
                         ), format: .number)
                         .keyboardType(.decimalPad)
-                        Text("État: ")
                         Picker("État", selection: Binding(
                             get: { ex.state ?? "neuf" },
                             set: { newState in
