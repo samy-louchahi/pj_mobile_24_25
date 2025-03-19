@@ -5,10 +5,9 @@
 //  Created by Samy Louchahi on 16/03/2025.
 //
 
-
 import SwiftUI
-import Combine
 
+@MainActor
 class SellerViewModel: ObservableObject {
     @Published var sellers: [Seller] = []
     @Published var loading: Bool = false
@@ -22,29 +21,26 @@ class SellerViewModel: ObservableObject {
     @Published var editingSeller: Seller?
     @Published var showForm: Bool = false
     @Published var showDetail: Bool = false
-
     @Published var selectedSeller: Seller?
 
-    private var cancellables = Set<AnyCancellable>()
     private let sellerService = SellerService.shared
 
-    func fetchSellers() {
-        loading = true
-        sellerService.getSellers()
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished: break
-                case .failure(let error):
-                    self.errorMessage = "Erreur: \(error)"
-                }
-            } receiveValue: { sellers in
-                self.sellers = sellers
-            }
-            .store(in: &cancellables)
+    init() {
+        Task { await fetchSellers() }
     }
 
+    // MARK: - Fetch Sellers
+    func fetchSellers() async {
+        do {
+            loading = true
+            sellers = try await sellerService.getSellers()
+        } catch {
+            errorMessage = "Erreur : \(error.localizedDescription)"
+        }
+        loading = false
+    }
+
+    // MARK: - Form Management
     func openAddForm() {
         editingSeller = nil
         name = ""
@@ -65,8 +61,8 @@ class SellerViewModel: ObservableObject {
         showForm = false
     }
 
-    func saveSeller() {
-        // Validation
+    // MARK: - Save Seller (Create or Update)
+    func saveSeller() async {
         guard !name.isEmpty, !email.isEmpty, !phone.isEmpty else {
             errorMessage = "Veuillez remplir tous les champs obligatoires."
             return
@@ -74,61 +70,42 @@ class SellerViewModel: ObservableObject {
         errorMessage = nil
 
         let body = SellerCreate(name: name, email: email, phone: phone)
-        if let existing = editingSeller {
-            sellerService.updateSeller(existing.id, body)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        self.closeForm()
-                        self.fetchSellers()
-                    case .failure(let error):
-                        self.errorMessage = "Erreur update : \(error)"
-                    }
-                } receiveValue: { _ in }
-                .store(in: &cancellables)
-        } else {
-            sellerService.createSeller(body)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        self.closeForm()
-                        self.fetchSellers()
-                    case .failure(let error):
-                        self.errorMessage = "Erreur création : \(error)"
-                    }
-                } receiveValue: { _ in }
-                .store(in: &cancellables)
+
+        do {
+            if let existing = editingSeller {
+                // Update Seller
+                _ = try await sellerService.updateSeller(existing.id, body)
+            } else {
+                // Create Seller
+                _ = try await sellerService.createSeller(body)
+            }
+            closeForm()
+            await fetchSellers()
+        } catch {
+            errorMessage = "Erreur lors de l'opération : \(error.localizedDescription)"
         }
     }
 
-    func deleteSeller(_ seller: Seller) {
-        sellerService.deleteSeller(seller.id)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                switch completion {
-                case .finished:
-                    self.sellers.removeAll { $0.id == seller.id }
-                case .failure(let error):
-                    self.errorMessage = "Erreur suppression : \(error)"
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+    // MARK: - Delete Seller
+    func deleteSeller(_ seller: Seller) async {
+        do {
+            loading = true
+            try await sellerService.deleteSeller(seller.id)
+            sellers.removeAll { $0.id == seller.id }
+        } catch {
+            errorMessage = "Erreur suppression : \(error.localizedDescription)"
+        }
+        loading = false
     }
 
-    // Détails
+    // MARK: - Détails
     func openDetails(_ seller: Seller) {
-        self.selectedSeller = seller
-        self.showDetail = true
-        // Ici, si tu veux charger du stock ou du saleDetail,  
-        // tu peux déclencher d’autres requêtes.  
+        selectedSeller = seller
+        showDetail = true
     }
 
     func closeDetails() {
-        self.showDetail = false
-        self.selectedSeller = nil
+        showDetail = false
+        selectedSeller = nil
     }
 }
-
-

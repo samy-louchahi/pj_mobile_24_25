@@ -1,13 +1,11 @@
 //
-//  APIError.swift
+//  APIService.swift
 //  projet_mobile_24_25
 //
 //  Created by Samy Louchahi on 16/03/2025.
 //
 
-
 import Foundation
-import Combine
 
 /// Représente les erreurs réseau possibles
 enum APIError: Error {
@@ -27,483 +25,13 @@ class APIService {
     
     /// Récupération du token depuis le Keychain ou UserDefaults
     private func getToken() -> String? {
-        // À adapter selon ta logique (UserDefaults ou Keychain)
         return UserDefaults.standard.string(forKey: "token")
     }
 
-    /// Exemple de méthode GET générique
-    func get<T: Decodable>(_ endpoint: String) -> AnyPublisher<T, APIError> {
-            guard let url = URL(string: baseURL + endpoint) else {
-                return Fail(error: .invalidURL).eraseToAnyPublisher()
-            }
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            if let token = getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            }
-            
-            let decoder = Self.customJSONDecoder()
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response -> Data in
-                    if let httpResponse = response as? HTTPURLResponse {
-                        switch httpResponse.statusCode {
-                        case 200...299:
-                            return data
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
-                    }
-                    return data
-                }
-                .mapError { error -> APIError in
-                    if let apiError = error as? APIError {
-                        return apiError
-                    } else {
-                        return .networkError(error)
-                    }
-                }
-                .decode(type: T.self, decoder: decoder)
-                .mapError { error -> APIError in
-                    if let decodingError = error as? DecodingError {
-                        return .decodingError(decodingError)
-                    } else {
-                        return (error as? APIError) ?? .unknown
-                    }
-                }
-                .eraseToAnyPublisher()
-        }
-        
-        func post<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
-            guard let url = URL(string: baseURL + endpoint) else {
-                return Fail(error: .invalidURL).eraseToAnyPublisher()
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            if let token = getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            }
-            
-            let encoder = Self.customJSONEncoder()
-            let decoder = Self.customJSONDecoder()
-            
-            do {
-                let encodedBody = try encoder.encode(body)
-                request.httpBody = encodedBody
-            } catch {
-                return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
-            }
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response -> Data in
-                    if let httpResponse = response as? HTTPURLResponse {
-                        switch httpResponse.statusCode {
-                        case 200...299:
-                            return data
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
-                    }
-                    return data
-                }
-                .mapError { error -> APIError in
-                    if let apiError = error as? APIError {
-                        return apiError
-                    } else {
-                        return .networkError(error)
-                    }
-                }
-                .decode(type: T.self, decoder: decoder)
-                .mapError { error -> APIError in
-                    if let decodingError = error as? DecodingError {
-                        return .decodingError(decodingError)
-                    } else {
-                        return (error as? APIError) ?? .unknown
-                    }
-                }
-                .eraseToAnyPublisher()
-        }
-        
-        func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) -> AnyPublisher<T, APIError> {
-            guard let url = URL(string: baseURL + endpoint) else {
-                return Fail(error: .invalidURL).eraseToAnyPublisher()
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "PUT"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-            if let token = getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            }
-            
-            let encoder = Self.customJSONEncoder()
-            let decoder = Self.customJSONDecoder()
-
-            do {
-                let encodedBody = try encoder.encode(body)
-                request.httpBody = encodedBody
-            } catch {
-                return Fail(error: APIError.networkError(error)).eraseToAnyPublisher()
-            }
-
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response -> Data in
-                    if let httpResponse = response as? HTTPURLResponse {
-                        switch httpResponse.statusCode {
-                        case 200...299:
-                            return data
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
-                    }
-                    return data
-                }
-                .mapError { error -> APIError in
-                    if let apiError = error as? APIError {
-                        return apiError
-                    } else {
-                        return .networkError(error)
-                    }
-                }
-                .decode(type: T.self, decoder: decoder)
-                .mapError { error -> APIError in
-                    if let decodingError = error as? DecodingError {
-                        return .decodingError(decodingError)
-                    } else {
-                        return (error as? APIError) ?? .unknown
-                    }
-                }
-                .eraseToAnyPublisher()
-        }
-    func delete(_ endpoint: String) -> AnyPublisher<Void, APIError> {
+    // MARK: - GET (Async)
+    func get<T: Decodable>(_ endpoint: String) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        if let token = getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Void in
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
-                        case 200...299:
-                            return ()
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                    }
-                }
-                return ()
-            }
-            .mapError { error -> APIError in
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
-                }
-            }
-            .eraseToAnyPublisher()
-    }
-    
-    // Etc. (PUT, DELETE, upload CSV, etc.)
-    
-    // Exemple pour GESTION CSV (multipart/form-data)
-    // Tu peux créer une méthode spécialisée ou un service différent
-    func uploadCSV(endpoint: String, csvData: Data, fileName: String) -> AnyPublisher<Void, APIError> {
-        guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-
-        // Créer la boundary
-        let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-        if let token = getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        // Construire le corps multipart
-        var body = Data()
-        // -- boundary
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        // Content-Disposition: form-data; name="file"; filename="xxxx.csv"
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-        // Content-Type: text/csv
-        body.append("Content-Type: text/csv\r\n\r\n".data(using: .utf8)!)
-        // données
-        body.append(csvData)
-        // nouvelle ligne
-        body.append("\r\n".data(using: .utf8)!)
-        // close boundary
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-        request.httpBody = body
-
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Void in
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
-                        case 200...299:
-                            // OK, on renvoie juste Void
-                            return ()
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                    }
-                }
-                return ()
-            }
-            .mapError { error -> APIError in
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
-                }
-            }
-            .eraseToAnyPublisher()
-    }
-    func postMultipart<T: Decodable>(
-            _ endpoint: String,
-            formDataParts: [FormDataPart]
-        ) -> AnyPublisher<T, APIError> {
-            guard let url = URL(string: baseURL + endpoint) else {
-                return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-
-            // Boundary
-            let boundary = "Boundary-\(UUID().uuidString)"
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-            // Token
-            if let token = getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            }
-
-            // Construire le body
-            var body = Data()
-            
-            for part in formDataParts {
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-
-                switch part {
-                case .text(let name, let value):
-                    // Content-Disposition: form-data; name="..."
-                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
-                    body.append(disposition.data(using: .utf8)!)
-                    body.append("\(value)\r\n".data(using: .utf8)!)
-
-                case .file(let name, let fileName, let mimeType, let data):
-                    // Content-Disposition: form-data; name="..."; filename="..."
-                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
-                    body.append(disposition.data(using: .utf8)!)
-                    body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-                    body.append(data)
-                    body.append("\r\n".data(using: .utf8)!)
-                }
-            }
-
-            // Fin
-            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-            request.httpBody = body
-
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response -> Data in
-                    if let httpResponse = response as? HTTPURLResponse {
-                        switch httpResponse.statusCode {
-                        case 200...299:
-                            return data
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
-                    }
-                    return data
-                }
-                .mapError { error -> APIError in
-                    if let apiError = error as? APIError {
-                        return apiError
-                    } else {
-                        return .networkError(error)
-                    }
-                }
-                .decode(type: T.self, decoder: JSONDecoder())
-                .mapError { error -> APIError in
-                    if let decodingError = error as? DecodingError {
-                        return .decodingError(decodingError)
-                    } else {
-                        return (error as? APIError) ?? .unknown
-                    }
-                }
-                .eraseToAnyPublisher()
-        }
-
-        /// Pareil pour PUT (si tu veux update en multipart)
-        func putMultipart<T: Decodable>(
-            _ endpoint: String,
-            formDataParts: [FormDataPart]
-        ) -> AnyPublisher<T, APIError> {
-            // Identique à postMultipart, sauf qu’on met `request.httpMethod = "PUT"`
-            // (et éventuellement on gère la réponse différemment)
-            
-            guard let url = URL(string: baseURL + endpoint) else {
-                return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "PUT"
-
-            let boundary = "Boundary-\(UUID().uuidString)"
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-            if let token = getToken() {
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            }
-
-            var body = Data()
-
-            for part in formDataParts {
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                switch part {
-                case .text(let name, let value):
-                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
-                    body.append(disposition.data(using: .utf8)!)
-                    body.append("\(value)\r\n".data(using: .utf8)!)
-                case .file(let name, let fileName, let mimeType, let data):
-                    let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
-                    body.append(disposition.data(using: .utf8)!)
-                    body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-                    body.append(data)
-                    body.append("\r\n".data(using: .utf8)!)
-                }
-            }
-
-            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-            request.httpBody = body
-
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .tryMap { data, response -> Data in
-                    if let httpResponse = response as? HTTPURLResponse {
-                        switch httpResponse.statusCode {
-                        case 200...299:
-                            return data
-                        case 401:
-                            throw APIError.unauthorized
-                        case 403:
-                            throw APIError.forbidden
-                        default:
-                            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
-                    }
-                    return data
-                }
-                .mapError { error -> APIError in
-                    if let apiError = error as? APIError {
-                        return apiError
-                    } else {
-                        return .networkError(error)
-                    }
-                }
-                .decode(type: T.self, decoder: JSONDecoder())
-                .mapError { error -> APIError in
-                    if let decodingError = error as? DecodingError {
-                        return .decodingError(decodingError)
-                    } else {
-                        return (error as? APIError) ?? .unknown
-                    }
-                }
-                .eraseToAnyPublisher()
-        }
-    private static func customJSONDecoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-
-        // Crée un ISO8601DateFormatter qui gère les fractions de seconde
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [
-            .withInternetDateTime,
-            .withFractionalSeconds  // crucial pour ".000Z"
-        ]
-        
-        decoder.dateDecodingStrategy = .custom { decoder in
-            // Récupérer la chaîne brute
-            let container = try decoder.singleValueContainer()
-            let dateString = try container.decode(String.self)
-            
-            // Tenter la conversion via isoFormatter
-            guard let date = isoFormatter.date(from: dateString) else {
-                throw DecodingError.dataCorrupted(
-                    DecodingError.Context(
-                        codingPath: decoder.codingPath,
-                        debugDescription: "Invalid date: \(dateString)"
-                    )
-                )
-            }
-            return date
-        }
-
-        return decoder
-    }
-
-    private static func customJSONEncoder() -> JSONEncoder {
-        let encoder = JSONEncoder()
-
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [
-            .withInternetDateTime,
-            .withFractionalSeconds
-        ]
-
-        // On définit une stratégie .custom pour l'encodage
-        encoder.dateEncodingStrategy = .custom { date, encoder in
-            let dateString = isoFormatter.string(from: date)
-            var container = encoder.singleValueContainer()
-            try container.encode(dateString)
-        }
-
-        return encoder
-    }
-    func getRaw(_ endpoint: String) -> AnyPublisher<Data, APIError> {
-        guard let url = URL(string: baseURL + endpoint) else {
-            return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
+            throw APIError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -514,31 +42,315 @@ class APIService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { data, response -> Data in
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
-                    case 200...299:
-                        return data
-                    case 401:
-                        throw APIError.unauthorized
-                    case 403:
-                        throw APIError.forbidden
-                    default:
-                        throw APIError.unexpectedStatusCode(httpResponse.statusCode)
-                    }
-                }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response)
+        
+        return try decodeJSON(data)
+    }
+
+    // MARK: - POST (Async)
+    func post<T: Decodable, U: Encodable>(_ endpoint: String, body: U) async throws -> T {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.httpBody = try encodeJSON(body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response)
+        
+        return try decodeJSON(data)
+    }
+
+    // MARK: - PUT (Async)
+    func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) async throws -> T {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        request.httpBody = try encodeJSON(body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response)
+        
+        return try decodeJSON(data)
+    }
+
+    // MARK: - DELETE (Async)
+    func delete(_ endpoint: String) async throws {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response)
+    }
+
+    // MARK: - Upload CSV (Multipart)
+    func uploadCSV(endpoint: String, csvData: Data, fileName: String) async throws {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: text/csv\r\n\r\n".data(using: .utf8)!)
+        body.append(csvData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response)
+    }
+    
+    func postMultipart<T: Decodable>(
+        _ endpoint: String,
+        formDataParts: [FormDataPart]
+    ) async throws -> T {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+
+        // Boundary pour le multipart/form-data
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        // Token d'authentification
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Construire le body
+        var body = Data()
+
+        for part in formDataParts {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+
+            switch part {
+            case .text(let name, let value):
+                let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
+                body.append(disposition.data(using: .utf8)!)
+                body.append("\(value)\r\n".data(using: .utf8)!)
+
+            case .file(let name, let fileName, let mimeType, let data):
+                let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
+                body.append(disposition.data(using: .utf8)!)
+                body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+                body.append(data)
+                body.append("\r\n".data(using: .utf8)!)
+            }
+        }
+
+        // Fin du body
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        // Effectuer la requête asynchrone
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        // Vérification du code HTTP
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.unknown
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            break
+        case 401:
+            throw APIError.unauthorized
+        case 403:
+            throw APIError.forbidden
+        default:
+            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+        }
+
+        // **Cas où la réponse est vide**
+        if T.self == EmptyResponse.self {
+            return EmptyResponse() as! T // Trick pour forcer Swift à accepter
+        }
+
+        // **Cas où la réponse est un objet JSON**
+        do {
+            let decodedData = try JSONDecoder().decode(T.self, from: data)
+            return decodedData
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+    
+    func putMultipart<T: Decodable>(
+        _ endpoint: String,
+        formDataParts: [FormDataPart]
+    ) async throws -> T {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        // Boundary pour le multipart/form-data
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        // Token d'authentification
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Construire le body
+        var body = Data()
+
+        for part in formDataParts {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+
+            switch part {
+            case .text(let name, let value):
+                let disposition = "Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n"
+                body.append(disposition.data(using: .utf8)!)
+                body.append("\(value)\r\n".data(using: .utf8)!)
+
+            case .file(let name, let fileName, let mimeType, let data):
+                let disposition = "Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(fileName)\"\r\n"
+                body.append(disposition.data(using: .utf8)!)
+                body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+                body.append(data)
+                body.append("\r\n".data(using: .utf8)!)
+            }
+        }
+
+        // Fin du body
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        // Effectuer la requête asynchrone
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        // Vérification du code HTTP
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.unknown
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            break
+        case 401:
+            throw APIError.unauthorized
+        case 403:
+            throw APIError.forbidden
+        default:
+            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+        }
+
+        // Décoder la réponse en objet de type T
+        do {
+            let decodedData = try JSONDecoder().decode(T.self, from: data)
+            return decodedData
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+    func getRaw(_ endpoint: String) async throws -> Data {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let httpResponse = response as? HTTPURLResponse {
+            switch httpResponse.statusCode {
+            case 200...299:
                 return data
+            case 401:
+                throw APIError.unauthorized
+            case 403:
+                throw APIError.forbidden
+            default:
+                throw APIError.unexpectedStatusCode(httpResponse.statusCode)
             }
-            .mapError { error -> APIError in
-                if let apiError = error as? APIError {
-                    return apiError
-                } else {
-                    return .networkError(error)
-                }
-            }
-            .eraseToAnyPublisher()
+        }
+
+        return data
+    }
+
+    // MARK: - Helper Methods
+    private func encodeJSON<T: Encodable>(_ object: T) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(object)
+    }
+
+    private func decodeJSON<T: Decodable>(_ data: Data) throws -> T {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    private func validateResponse(_ response: URLResponse) throws {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.unknown
+        }
+        
+        switch httpResponse.statusCode {
+        case 200...299:
+            return
+        case 401:
+            throw APIError.unauthorized
+        case 403:
+            throw APIError.forbidden
+        default:
+            throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+        }
     }
 }
-
-

@@ -56,7 +56,7 @@ struct LoginView: View {
                     .cornerRadius(8)
 
                 Button(action: {
-                    viewModel.login()
+                    Task {await viewModel.login()}
                 }) {
                     if viewModel.isLoading {
                         ProgressView()

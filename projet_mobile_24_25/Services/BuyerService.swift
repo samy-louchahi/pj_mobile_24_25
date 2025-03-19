@@ -5,28 +5,30 @@
 //  Created by Samy Louchahi on 16/03/2025.
 //
 
-
 import Foundation
-import Combine
 
 class BuyerService {
     static let shared = BuyerService()
     private let apiService = APIService()  // Ton service générique
 
-    func getBuyers() -> AnyPublisher<[Buyer], APIError> {
-        apiService.get("/buyers") // => renvoie AnyPublisher<[Buyer], APIError>
+    // Récupérer tous les acheteurs
+    func getBuyers() async throws -> [Buyer] {
+        return try await apiService.get("/buyers")
     }
 
-    func createBuyer(_ newBuyer: BuyerCreate) -> AnyPublisher<Buyer, APIError> {
-        apiService.post("/buyers", body: newBuyer)
+    // Créer un acheteur
+    func createBuyer(_ newBuyer: BuyerCreate) async throws -> Buyer {
+        return try await apiService.post("/buyers", body: newBuyer)
     }
 
-    func updateBuyer(_ id: Int, _ updatedBuyer: BuyerCreate) -> AnyPublisher<Buyer, APIError> {
-        apiService.put("/buyers/\(id)", body: updatedBuyer)
+    // Mettre à jour un acheteur
+    func updateBuyer(_ id: Int, _ updatedBuyer: BuyerCreate) async throws -> Buyer {
+        return try await apiService.put("/buyers/\(id)", body: updatedBuyer)
     }
 
-    func deleteBuyer(_ id: Int) -> AnyPublisher<Void, APIError> {
-        apiService.delete("/buyers/\(id)") // => AnyPublisher<Void, APIError>
+    // Supprimer un acheteur
+    func deleteBuyer(_ id: Int) async throws {
+        try await apiService.delete("/buyers/\(id)")
     }
 }
 

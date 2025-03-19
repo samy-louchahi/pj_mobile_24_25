@@ -44,7 +44,7 @@ struct SellerListView: View {
                             SellerCardView(
                                 seller: seller,
                                 onUpdate: { viewModel.openEditForm(seller) },
-                                onDelete: { viewModel.deleteSeller(seller) },
+                                onDelete: { Task {await viewModel.deleteSeller(seller)} },
                                 onSellerTapped: {
                                 }
                             )
@@ -65,7 +65,7 @@ struct SellerListView: View {
                 SellerFormView(viewModel: viewModel)
             }
             .onAppear {
-                viewModel.fetchSellers()
+                Task {await viewModel.fetchSellers()}
             }
         }
     }

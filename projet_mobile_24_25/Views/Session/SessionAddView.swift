@@ -62,7 +62,8 @@ struct SessionAddView: View {
                         fees: fees,
                         commission: commission
                     )
-                    viewModel.createSession(newSession)
+                    Task{await viewModel.createSession(newSession)}
+                    viewModel.closeAddForm()
                 }
             }
             .navigationTitle("Créer une Session")

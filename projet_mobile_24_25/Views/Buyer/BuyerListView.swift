@@ -44,7 +44,7 @@ struct BuyerListView: View {
                                     viewModel.openEditForm(buyer: buyer)
                                 },
                                 onDelete: {
-                                    viewModel.deleteBuyer(buyer)
+                                    Task {await viewModel.deleteBuyer(buyer)}
                                 }
                             )
                         }
@@ -64,7 +64,7 @@ struct BuyerListView: View {
                 BuyerFormView(viewModel: viewModel)
             }
             .onAppear {
-                viewModel.fetchBuyers()
+                Task {await viewModel.fetchBuyers()}
             }
         }
     }

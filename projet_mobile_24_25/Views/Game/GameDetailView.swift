@@ -26,7 +26,7 @@ struct GameDetailView: View {
         }
         .onAppear {
             // Appel de la méthode du VM pour fetch
-            viewModel.fetchStocksForDetail(game: game)
+            Task {await viewModel.fetchStocksForDetail(game: game)}
         }
     }
 

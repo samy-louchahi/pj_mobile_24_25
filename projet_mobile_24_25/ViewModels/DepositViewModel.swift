@@ -5,10 +5,9 @@
 //  Created by Samy Louchahi on 17/03/2025.
 //
 
-
 import SwiftUI
-import Combine
 
+@MainActor
 class DepositViewModel: ObservableObject {
     // Liste complète des dépôts
     @Published var deposits: [Deposit] = []
@@ -19,96 +18,71 @@ class DepositViewModel: ObservableObject {
     @Published var games: [Game] = []
 
     private let depositService = DepositService.shared
-    private var cancellables = Set<AnyCancellable>()
-    
-    init() {
-            fetchData()
-        }
-    func fetchData() {
-            let sessionPublisher = SessionService.shared.getSessions().catch { _ in Just<[Session]>([]) }
-            let sellerPublisher = SellerService.shared.getSellers().catch { _ in Just<[Seller]>([]) }
-            let gamePublisher = GameService.shared.getGames().catch { _ in Just<[Game]>([]) }
-            let depositPublisher = DepositService.shared.getAllDeposits().catch { _ in Just<[Deposit]>([]) }
 
-            Publishers.Zip4(sessionPublisher, sellerPublisher, gamePublisher, depositPublisher)
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] sessions, sellers, games, deposits in
-                    self?.sessions = sessions
-                    self?.sellers = sellers
-                    self?.games = games
-                    self?.deposits = deposits
-                }
-                .store(in: &cancellables)
+    init() {
+        Task { await fetchData() }
+    }
+
+    // MARK: - Fetch All Data
+    func fetchData() async {
+        loading = true
+        do {
+            async let fetchedSessions = SessionService.shared.getSessions()
+            async let fetchedSellers = SellerService.shared.getSellers()
+            async let fetchedGames = GameService.shared.getGames()
+            async let fetchedDeposits = depositService.getAllDeposits()
+
+            (sessions, sellers, games, deposits) = try await (fetchedSessions, fetchedSellers, fetchedGames, fetchedDeposits)
+        } catch {
+            errorMessage = "Erreur lors de la récupération des données : \(error.localizedDescription)"
         }
+        loading = false
+    }
 
     // MARK: - Fetch Deposits
-    func fetchDeposits() {
+    func fetchDeposits() async {
         loading = true
-        depositService.getAllDeposits()
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    self.errorMessage = "Erreur lors de la récupération des dépôts : \(error)"
-                }
-            } receiveValue: { deposits in
-                self.deposits = deposits
-            }
-            .store(in: &cancellables)
+        do {
+            deposits = try await depositService.getAllDeposits()
+        } catch {
+            errorMessage = "Erreur lors de la récupération des dépôts : \(error.localizedDescription)"
+        }
+        loading = false
     }
-    
+
     // MARK: - Create Deposit
-    func createDeposit(_ depositData: DepositCreate) {
+    func createDeposit(_ depositData: DepositCreate) async {
         loading = true
-        depositService.createDeposit(depositData)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished:
-                    self.fetchDeposits()
-                case .failure(let error):
-                    self.errorMessage = "Erreur création dépôt : \(error)"
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+        do {
+            _ = try await depositService.createDeposit(depositData)
+            await fetchDeposits() // Recharge la liste
+        } catch {
+            errorMessage = "Erreur création dépôt : \(error.localizedDescription)"
+        }
+        loading = false
     }
-    
+
     // MARK: - Update Deposit (optionnel)
-    func updateDeposit(id: Int, depositData: PartialDeposit) {
+    func updateDeposit(id: Int, depositData: PartialDeposit) async {
         loading = true
-        depositService.updateDeposit(id, depositData)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished:
-                    self.fetchDeposits()
-                case .failure(let error):
-                    self.errorMessage = "Erreur mise à jour dépôt : \(error)"
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+        do {
+            _ = try await depositService.updateDeposit(id, depositData)
+            await fetchDeposits()
+        } catch {
+            errorMessage = "Erreur mise à jour dépôt : \(error.localizedDescription)"
+        }
+        loading = false
     }
-    
+
     // MARK: - Delete Deposit
-    func deleteDeposit(id: Int) {
+    func deleteDeposit(id: Int) async {
         loading = true
-        depositService.deleteDeposit(id)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished:
-                    // Met à jour la liste locale en supprimant le dépôt
-                    self.deposits.removeAll { $0.depositId == id }
-                case .failure(let error):
-                    self.errorMessage = "Erreur suppression dépôt : \(error)"
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+        do {
+            try await depositService.deleteDeposit(id)
+            deposits.removeAll { $0.depositId == id } // Mise à jour locale
+        } catch {
+            errorMessage = "Erreur suppression dépôt : \(error.localizedDescription)"
+        }
+        loading = false
     }
 }

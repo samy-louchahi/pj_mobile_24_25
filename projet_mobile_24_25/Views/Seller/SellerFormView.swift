@@ -27,7 +27,8 @@ struct SellerFormView: View {
                 }
 
                 Button(action: {
-                    viewModel.saveSeller()
+                    Task {await viewModel.saveSeller()}
+                    viewModel.closeForm()
                 }) {
                     Text(viewModel.editingSeller == nil ? "Ajouter" : "Mettre à jour")
                 }

@@ -86,7 +86,11 @@ struct AddDepositView: View {
                 }
             }
         }
-        .onAppear { viewModel.fetchData() }
+        .onAppear {
+            Task{
+                await viewModel.fetchData()
+            }
+        }
     }
 }
 
@@ -158,7 +162,7 @@ extension AddDepositView {
             games: gamesData
         )
         
-        viewModel.createDeposit(depositData)
+        Task {await viewModel.createDeposit(depositData)}
     }
     
     private func handleClose() {

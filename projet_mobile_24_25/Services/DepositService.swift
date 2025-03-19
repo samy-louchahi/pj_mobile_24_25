@@ -35,29 +35,35 @@ struct PartialDeposit: Codable {
     // Ajoute d'autres champs si nécessaire
 }
 
+
 // MARK: - Service
 
 class DepositService {
     static let shared = DepositService()
     private let apiService = APIService()
-    
-    /// Récupère la liste de tous les dépôts
-    func getAllDeposits() -> AnyPublisher<[Deposit], APIError> {
-        apiService.get("/deposits")
+
+    /// Récupérer la liste de tous les dépôts
+    func getAllDeposits() async throws -> [Deposit] {
+        return try await apiService.get("/deposits")
     }
-    
-    /// Crée un nouveau dépôt avec ses jeux associés
-    func createDeposit(_ depositData: DepositCreate) -> AnyPublisher<Deposit, APIError> {
-        apiService.post("/deposits", body: depositData)
+
+    /// Récupérer tous les jeux déposés
+    func getAllDepositGames() async throws -> [DepositGame] {
+        return try await apiService.get("/depositGames")
     }
-    
-    /// Met à jour un dépôt (optionnel)
-    func updateDeposit(_ id: Int, _ depositData: PartialDeposit) -> AnyPublisher<Deposit, APIError> {
-        apiService.put("/deposits/\(id)", body: depositData)
+
+    /// Créer un dépôt avec ses jeux associés
+    func createDeposit(_ depositData: DepositCreate) async throws -> Deposit {
+        return try await apiService.post("/deposits", body: depositData)
     }
-    
-    /// Supprime un dépôt
-    func deleteDeposit(_ id: Int) -> AnyPublisher<Void, APIError> {
-        apiService.delete("/deposits/\(id)")
+
+    /// Mettre à jour un dépôt
+    func updateDeposit(_ id: Int, _ depositData: PartialDeposit) async throws -> Deposit {
+        return try await apiService.put("/deposits/\(id)", body: depositData)
+    }
+
+    /// Supprimer un dépôt
+    func deleteDeposit(_ id: Int) async throws {
+        try await apiService.delete("/deposits/\(id)")
     }
 }

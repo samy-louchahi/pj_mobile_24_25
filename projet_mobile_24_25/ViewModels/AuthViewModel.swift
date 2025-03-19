@@ -1,19 +1,18 @@
 //
-//  UserRole.swift
+//  AuthViewModel.swift
 //  projet_mobile_24_25
 //
 //  Created by Samy Louchahi on 16/03/2025.
 //
 
-
 import SwiftUI
-import Combine
 
 enum UserRole: String {
     case admin
     case gestionnaire
 }
 
+@MainActor
 class AuthViewModel: ObservableObject {
     // MARK: - Input Properties
     @Published var role: UserRole = .admin
@@ -26,17 +25,17 @@ class AuthViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var isLoading: Bool = false
 
-    // MARK: - Publishers
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - Services
     private let apiService = APIService()
 
-    init() {}
+    init() {
+        checkIfLoggedIn()
+    }
 
     // MARK: - Methods
 
-    func login() {
+    /// Fonction pour gérer la connexion utilisateur
+    func login() async {
         // Réinitialiser l’erreur
         errorMessage = nil
 
@@ -62,41 +61,28 @@ class AuthViewModel: ObservableObject {
         // Construire le payload JSON
         var body: [String: String] = [:]
         if role == .admin {
-            body = [
-                "email": email,
-                "password": password
-            ]
+            body = ["email": email, "password": password]
         } else {
-            body = [
-                "username": username,
-                "password": password
-            ]
+            body = ["username": username, "password": password]
         }
 
-        // Appel API via la méthode post
-        apiService.post(endpoint, body: body)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.isLoading = false
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    print("Erreur lors du login:", error)
-                    self.errorMessage = "Erreur lors de la connexion."
-                    // Si besoin, on peut gérer spécifiquement APIError.unauthorized, etc.
-                }
-            } receiveValue: { (response: LoginResponse) in
-                // Récupérer le token
-                let token = response.token
-                // Stocker le token localement (UserDefaults ou Keychain)
-                UserDefaults.standard.set(token, forKey: "token")
-                
-                // Mettre à jour l'état
-                self.isLoggedIn = true
-            }
-            .store(in: &self.cancellables)
+        // Effectuer la requête
+        do {
+            let response: LoginResponse = try await apiService.post(endpoint, body: body)
+            // Stocker le token localement (UserDefaults ou Keychain)
+            UserDefaults.standard.set(response.token, forKey: "token")
+            
+            // Mettre à jour l'état de connexion
+            isLoggedIn = true
+        } catch {
+            print("Erreur lors du login:", error)
+            self.errorMessage = "Erreur lors de la connexion."
+        }
+
+        isLoading = false
     }
+
+    /// Fonction pour gérer la déconnexion
     func logout() {
         UserDefaults.standard.removeObject(forKey: "token")
         isLoggedIn = false
@@ -105,6 +91,13 @@ class AuthViewModel: ObservableObject {
         password = ""
         errorMessage = nil
         isLoading = false
+    }
+
+    /// Vérifie si un token est présent pour maintenir la connexion
+    func checkIfLoggedIn() {
+        if UserDefaults.standard.string(forKey: "token") != nil {
+            isLoggedIn = true
+        }
     }
 }
 

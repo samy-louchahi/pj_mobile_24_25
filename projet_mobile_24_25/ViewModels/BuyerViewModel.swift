@@ -5,10 +5,9 @@
 //  Created by Samy Louchahi on 16/03/2025.
 //
 
-
 import SwiftUI
-import Combine
 
+@MainActor
 class BuyerViewModel: ObservableObject {
     // Liste des buyers
     @Published var buyers: [Buyer] = []
@@ -25,26 +24,17 @@ class BuyerViewModel: ObservableObject {
     @Published var editingBuyer: Buyer?
     @Published var showForm: Bool = false
 
-    private var cancellables = Set<AnyCancellable>()
     private let buyerService = BuyerService.shared
 
     // Chargement de la liste
-    func fetchBuyers() {
+    func fetchBuyers() async {
         loading = true
-        buyerService.getBuyers()
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    self.errorMessage = "Erreur : \(error)"
-                }
-            } receiveValue: { buyers in
-                self.buyers = buyers
-            }
-            .store(in: &cancellables)
+        do {
+            buyers = try await buyerService.getBuyers()
+        } catch {
+            errorMessage = "Erreur : \(error.localizedDescription)"
+        }
+        loading = false
     }
 
     // Ouvrir le formulaire pour ajouter
@@ -73,12 +63,11 @@ class BuyerViewModel: ObservableObject {
     }
 
     // Créer ou mettre à jour
-    func saveBuyer() {
+    func saveBuyer() async {
         // Validation
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty,
               !email.trimmingCharacters(in: .whitespaces).isEmpty,
-              !phone.trimmingCharacters(in: .whitespaces).isEmpty
-        else {
+              !phone.trimmingCharacters(in: .whitespaces).isEmpty else {
             errorMessage = "Veuillez remplir tous les champs obligatoires."
             return
         }
@@ -86,55 +75,28 @@ class BuyerViewModel: ObservableObject {
 
         let body = BuyerCreate(name: name, email: email, phone: phone, address: address)
 
-        if let existing = editingBuyer {
-            // Update
-            buyerService.updateBuyer(existing.id, body)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        self.closeForm()
-                        // On recharge la liste
-                        self.fetchBuyers()
-                    case .failure(let error):
-                        self.errorMessage = "Erreur update : \(error)"
-                    }
-                } receiveValue: { updatedBuyer in
-                    // Optionnel : Mettre à jour localement self.buyers
-                }
-                .store(in: &cancellables)
-        } else {
-            // Create
-            buyerService.createBuyer(body)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        self.closeForm()
-                        self.fetchBuyers()
-                    case .failure(let error):
-                        self.errorMessage = "Erreur création : \(error)"
-                    }
-                } receiveValue: { newBuyer in
-                    // Optionnel
-                }
-                .store(in: &cancellables)
+        do {
+            if let existing = editingBuyer {
+                // Update
+                _ = try await buyerService.updateBuyer(existing.id, body)
+            } else {
+                // Create
+                _ = try await buyerService.createBuyer(body)
+            }
+            closeForm()
+            await fetchBuyers() // Recharger la liste après modification
+        } catch {
+            errorMessage = "Erreur : \(error.localizedDescription)"
         }
     }
 
     // Suppression
-    func deleteBuyer(_ buyer: Buyer) {
-        buyerService.deleteBuyer(buyer.id)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                switch completion {
-                case .finished:
-                    // Retirer localement
-                    self.buyers.removeAll { $0.id == buyer.id }
-                case .failure(let error):
-                    self.errorMessage = "Erreur suppression : \(error)"
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+    func deleteBuyer(_ buyer: Buyer) async {
+        do {
+            try await buyerService.deleteBuyer(buyer.id)
+            buyers.removeAll { $0.id == buyer.id } // Mise à jour locale
+        } catch {
+            errorMessage = "Erreur suppression : \(error.localizedDescription)"
+        }
     }
 }

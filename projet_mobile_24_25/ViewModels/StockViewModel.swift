@@ -1,6 +1,13 @@
-import SwiftUI
-import Combine
+//
+//  SaleViewModel.swift
+//  projet_mobile_24_25
+//
+//  Created by Samy Louchahi on 18/03/2025.
+//
 
+import SwiftUI
+
+@MainActor
 class StockViewModel: ObservableObject {
     @Published var sessions: [Session] = []
     @Published var stocksDict: [Int: Stock] = [:]  // Dictionnaire indexé par stockId
@@ -8,53 +15,42 @@ class StockViewModel: ObservableObject {
     @Published var loading: Bool = false
     @Published var errorMessage: String?
 
-    private var cancellables = Set<AnyCancellable>()
     private let sessionService = SessionService.shared
     private let stockService = StockService.shared
 
     init() {
-        fetchSessions()
+        Task { await fetchSessions() }
     }
     
-    func fetchSessions() {
-        sessionService.getSessions()
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                if case let .failure(error) = completion {
-                    self.errorMessage = "Erreur lors de la récupération des sessions: \(error)"
-                }
-            } receiveValue: { sessions in
-                self.sessions = sessions
-                // Sélection automatique de la première session active, par exemple
-                if let active = sessions.first(where: { $0.status }) {
-                    self.selectedSession = active.sessionId
-                    self.fetchStocks()
-                }
+    func fetchSessions() async {
+        do {
+            sessions = try await sessionService.getSessions()
+            if let active = sessions.first(where: { $0.status }) {
+                selectedSession = active.sessionId
+                await fetchStocks()
             }
-            .store(in: &cancellables)
+        } catch {
+            errorMessage = "Erreur lors de la récupération des sessions: \(error.localizedDescription)"
+        }
     }
     
-    func fetchStocks() {
+    func fetchStocks() async {
         guard let sessionId = selectedSession else {
-            self.stocksDict = [:]
+            stocksDict = [:]
             return
         }
-        loading = true
-        stockService.getAllStocks(sessionId: sessionId)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                self.loading = false
-                if case let .failure(error) = completion {
-                    self.errorMessage = "Erreur lors de la récupération des stocks: \(error)"
-                }
-            } receiveValue: { stocks in
-                self.stocksDict = Dictionary(uniqueKeysWithValues: stocks.map { ($0.stockId, $0) })
-            }
-            .store(in: &cancellables)
+        do {
+            loading = true
+            let stocks = try await stockService.getAllStocks(sessionId: sessionId)
+            stocksDict = Dictionary(uniqueKeysWithValues: stocks.map { ($0.stockId, $0) })
+        } catch {
+            errorMessage = "Erreur lors de la récupération des stocks: \(error.localizedDescription)"
+        }
+        loading = false
     }
     
     func updateSelectedSession(_ sessionId: Int?) {
-        self.selectedSession = sessionId
-        fetchStocks()
+        selectedSession = sessionId
+        Task { await fetchStocks() }
     }
 }

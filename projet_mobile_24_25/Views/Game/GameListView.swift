@@ -52,7 +52,7 @@ struct GameListView: View {
                                 GameCardView(
                                     game: game,
                                     onUpdate: { viewModel.openEditForm(game) },
-                                    onDelete: { viewModel.deleteGame(game) },
+                                    onDelete: { Task {await viewModel.deleteGame(game)} },
                                     onViewDetails: { viewModel.openDetail(game) }
                                 )
                                 .frame(height: 200)
@@ -90,7 +90,7 @@ struct GameListView: View {
                 }
             }
             .onAppear {
-                viewModel.fetchGames()
+                Task {await viewModel.fetchGames()}
             }
             // FileImporter iOS 14+
             .fileImporter(
@@ -103,7 +103,7 @@ struct GameListView: View {
                     guard let csvURL = urls.first else { return }
                     do {
                         let data = try Data(contentsOf: csvURL)
-                        viewModel.importCSV(data, fileName: csvURL.lastPathComponent)
+                        Task {await viewModel.importCSV(data, fileName: csvURL.lastPathComponent)}
                     } catch {
                         print("Erreur lecture du CSV: \(error)")
                     }

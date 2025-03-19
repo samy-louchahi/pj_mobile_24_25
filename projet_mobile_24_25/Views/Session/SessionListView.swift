@@ -83,7 +83,7 @@ struct SessionListView: View {
                 }
                 Button("Supprimer", role: .destructive) {
                     if let sid = viewModel.sessionToDelete {
-                        viewModel.deleteSession(sid)
+                        Task{await viewModel.deleteSession(sid)}
                     }
                 }
             }, message: {
@@ -91,7 +91,7 @@ struct SessionListView: View {
             })
         }
         .onAppear {
-            viewModel.fetchSessions()
+            Task {await viewModel.fetchSessions()}
         }
     }
 }

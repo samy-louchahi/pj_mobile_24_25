@@ -1,29 +1,33 @@
-import Foundation
-import Combine
+//
+//  GameService.swift
+//  projet_mobile_24_25
+//
+//  Created par Samy Louchahi le 17/03/2025.
+//
 
-// 1) Ton enum pour décrire chaque champ ou fichier
+import Foundation
+
+/// 1) Enum pour définir un champ ou un fichier
 enum FormDataPart {
     case text(name: String, value: String)
     case file(name: String, fileName: String, mimeType: String, data: Data)
 }
 
-// 2) Ton struct pour stocker fields + files
+/// 2) Struct pour stocker les champs texte et fichiers
 struct MultipartFormData {
     var fields: [String: String] = [:]
     var files: [String: (filename: String, data: Data, mimeType: String)] = [:]
 }
 
-// 3) Extension pour convertir en [FormDataPart]
+/// 3) Extension pour convertir en [FormDataPart]
 extension MultipartFormData {
     func toFormDataParts() -> [FormDataPart] {
         var parts: [FormDataPart] = []
 
-        // Champs texte
         for (k, v) in fields {
             parts.append(.text(name: k, value: v))
         }
 
-        // Fichiers
         for (k, file) in files {
             parts.append(.file(name: k,
                                fileName: file.filename,
@@ -35,51 +39,55 @@ extension MultipartFormData {
     }
 }
 
-// 4) Ton EmptyResponse pour les retours vides
+/// 4) Struct pour les réponses vides
 struct EmptyResponse: Codable {}
 
-/// 5) Ton GameService
+/// 5) Service pour gérer les opérations liées aux jeux
 class GameService {
     static let shared = GameService()
     private let apiService = APIService()
 
-    // GET
-    func getGames() -> AnyPublisher<[Game], APIError> {
-        apiService.get("/games")
+    // MARK: - GET
+    /// Récupérer tous les jeux
+    func getGames() async throws -> [Game] {
+        return try await apiService.get("/games")
     }
 
-    func getGameById(_ id: Int) -> AnyPublisher<Game, APIError> {
-        apiService.get("/games/\(id)")
+    /// Récupérer un jeu par ID
+    func getGameById(_ id: Int) async throws -> Game {
+        return try await apiService.get("/games/\(id)")
     }
 
-    // CREATE => POST /games
-    func createGame(formData: MultipartFormData) -> AnyPublisher<Game, APIError> {
-        // Conversion en [FormDataPart]
+    // MARK: - CREATE
+    /// Créer un jeu
+    func createGame(formData: MultipartFormData) async throws -> Game {
         let parts = formData.toFormDataParts()
-        return apiService.postMultipart("/games", formDataParts: parts)
+        return try await apiService.postMultipart("/games", formDataParts: parts)
     }
 
-    // UPDATE => PUT /games/:id
-    func updateGame(_ id: Int, formData: MultipartFormData) -> AnyPublisher<Game, APIError> {
+    // MARK: - UPDATE
+    /// Mettre à jour un jeu
+    func updateGame(_ id: Int, formData: MultipartFormData) async throws -> Game {
         let parts = formData.toFormDataParts()
-        return apiService.putMultipart("/games/\(id)", formDataParts: parts)
+        return try await apiService.putMultipart("/games/\(id)", formDataParts: parts)
     }
 
-    // DELETE => /games/:id
-    func deleteGame(_ id: Int) -> AnyPublisher<Void, APIError> {
-        apiService.delete("/games/\(id)")
+    // MARK: - DELETE
+    /// Supprimer un jeu
+    func deleteGame(_ id: Int) async throws {
+        try await apiService.delete("/games/\(id)")
     }
 
-    // GET => /games/:id/stocks
-    func getGameStocks(_ gameId: Int) -> AnyPublisher<[Stock], APIError> {
-        apiService.get("/games/\(gameId)/stocks")
+    // MARK: - STOCKS
+    /// Récupérer les stocks d'un jeu
+    func getGameStocks(_ gameId: Int) async throws -> [Stock] {
+        return try await apiService.get("/games/\(gameId)/stocks")
     }
 
-    // Import CSV => /csvImport/import
-    func importGames(_ formData: MultipartFormData) -> AnyPublisher<Void, APIError> {
+    // MARK: - IMPORT CSV
+    /// Importer un CSV contenant des jeux
+    func importGames(_ formData: MultipartFormData) async throws {
         let parts = formData.toFormDataParts()
-        return apiService.postMultipart("/csvImport/import", formDataParts: parts)
-            .map { (_: EmptyResponse) in () }
-            .eraseToAnyPublisher()
+        _ = try await apiService.postMultipart("/csvImport/import", formDataParts: parts) as EmptyResponse
     }
 }

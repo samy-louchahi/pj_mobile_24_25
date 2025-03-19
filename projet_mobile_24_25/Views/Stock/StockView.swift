@@ -70,7 +70,7 @@ struct StockView: View {
             }
             .navigationTitle("Stocks")
         }
-        .onAppear { viewModel.fetchSessions() }
+        .onAppear { Task {await viewModel.fetchSessions()} }
     }
     
     private func formattedDate(_ date: Date) -> String {

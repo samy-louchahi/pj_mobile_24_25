@@ -77,7 +77,8 @@ struct SessionUpdateView: View {
                             commission: commission,
                             status: status
                         )
-                        viewModel.updateSession(sessionId: session.id, updated)
+                        Task {await viewModel.updateSession(sessionId: session.id, updated)}
+                        viewModel.closeUpdateForm()
                     }) {
                         Text("Mettre à jour")
                             .fontWeight(.semibold)

@@ -44,7 +44,7 @@ struct DepositListView: View {
                         ForEach(viewModel.deposits) { deposit in
                             DepositCardView(
                                 deposit: deposit,
-                                onDelete: { id in viewModel.deleteDeposit(id: id) }
+                                onDelete: { id in Task {await viewModel.deleteDeposit(id: id)} }
                                 // Vous pouvez ajouter onUpdate et onViewDetails si nécessaire
                             )
                         }
@@ -64,7 +64,7 @@ struct DepositListView: View {
                 AddDepositView(viewModel: DepositViewModel())
             }
             .onAppear {
-                viewModel.fetchDeposits()
+                Task {await viewModel.fetchDeposits()}
             }
         }
     }

@@ -68,13 +68,13 @@ struct GameFormView: View {
                         } else {
                             self.errorMessage = nil
                             let existingPic = viewModel.editingGame?.picture
-                            viewModel.saveGame(
+                            Task{await viewModel.saveGame(
                                 name: name,
                                 publisher: publisher,
                                 description: description,
                                 existingPicture: existingPic,
                                 imageData: imageData
-                            )
+                            )}
                         }
                     }
                 }

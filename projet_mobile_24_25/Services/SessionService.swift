@@ -26,29 +26,33 @@ struct SessionUpdate: Codable {
     let status: Bool
 }
 
-/// Le modèle complet pour la session
-/// (que tu as déjà, p.ex. struct Session: Codable, Identifiable { ... })
+
 struct SessionService {
     static let shared = SessionService()
     private let apiService = APIService()
 
-    func getSessions() -> AnyPublisher<[Session], APIError> {
-        apiService.get("/sessions")
+    // MARK: - GET all Sessions
+    func getSessions() async throws -> [Session] {
+        return try await apiService.get("/sessions")
     }
 
-    func createSession(_ body: SessionCreate) -> AnyPublisher<Session, APIError> {
-        apiService.post("/sessions", body: body)
+    // MARK: - CREATE Session
+    func createSession(_ body: SessionCreate) async throws -> Session {
+        return try await apiService.post("/sessions", body: body)
     }
 
-    func updateSession(_ id: Int, _ body: SessionUpdate) -> AnyPublisher<Session, APIError> {
-        apiService.put("/sessions/\(id)", body: body)
+    // MARK: - UPDATE Session
+    func updateSession(_ id: Int, _ body: SessionUpdate) async throws -> Session {
+        return try await apiService.put("/sessions/\(id)", body: body)
     }
 
-    func deleteSession(_ id: Int) -> AnyPublisher<Void, APIError> {
-        apiService.delete("/sessions/\(id)")
-    }
-    func getGlobalBalance(_ id: Int) -> AnyPublisher<GlobalBalance, APIError> {
-        apiService.get("finances/session/\(id)")
+    // MARK: - DELETE Session
+    func deleteSession(_ id: Int) async throws {
+        try await apiService.delete("/sessions/\(id)")
     }
 
+    // MARK: - GET Global Balance for a Session
+    func getGlobalBalance(_ id: Int) async throws -> GlobalBalance {
+        return try await apiService.get("/finances/session/\(id)")
+    }
 }
