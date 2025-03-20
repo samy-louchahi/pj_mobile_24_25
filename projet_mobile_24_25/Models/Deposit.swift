@@ -9,7 +9,7 @@
 import Foundation
 
 /// Représente un dépôt (table: deposits).
-struct Deposit: Codable, Identifiable {
+struct Deposit: Codable, Identifiable, DateCodable {
     let depositId: Int
     var id: Int { depositId }
 

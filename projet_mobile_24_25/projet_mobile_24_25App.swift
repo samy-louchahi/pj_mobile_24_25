@@ -14,11 +14,9 @@ struct projet_mobile_24_25App: App {
     var body: some Scene {
         WindowGroup {
             if authViewModel.isLoggedIn {
-                            // Utilisateur connecté
                             MainTabView()
                                 .environmentObject(authViewModel)
                         } else {
-                            // Écran de connexion
                             LoginView()
                                 .environmentObject(authViewModel)
                         }

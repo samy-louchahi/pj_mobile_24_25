@@ -9,7 +9,7 @@
 import Foundation
 
 /// Représente une session (table: sessions).
-struct Session: Codable, Identifiable {
+struct Session: Codable, Identifiable, DateCodable {
     let sessionId: Int
     var id: Int { sessionId }
 

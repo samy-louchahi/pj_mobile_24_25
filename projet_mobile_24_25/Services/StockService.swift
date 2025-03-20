@@ -5,8 +5,8 @@ class StockService {
     private let apiService = APIService()
     
     // Récupérer tous les stocks pour une session donnée
-    func getAllStocks(sessionId: Int) async throws -> [Stock] {
-        let endpoint = "/stocks/\(sessionId)"
+    func getAllStocks() async throws -> [Stock] {
+        let endpoint = "/stocks/"
         let data = try await apiService.getRaw(endpoint)
         
         // Tentative de décodage en tableau de stocks

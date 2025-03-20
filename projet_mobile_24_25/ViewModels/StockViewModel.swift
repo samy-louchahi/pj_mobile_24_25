@@ -35,15 +35,12 @@ class StockViewModel: ObservableObject {
     }
     
     func fetchStocks() async {
-        guard let sessionId = selectedSession else {
-            stocksDict = [:]
-            return
-        }
         do {
             loading = true
-            let stocks = try await stockService.getAllStocks(sessionId: sessionId)
+            let stocks = try await stockService.getAllStocks()
             stocksDict = Dictionary(uniqueKeysWithValues: stocks.map { ($0.stockId, $0) })
         } catch {
+            print("pb stock \(error) ")
             errorMessage = "Erreur lors de la récupération des stocks: \(error.localizedDescription)"
         }
         loading = false

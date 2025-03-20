@@ -31,6 +31,7 @@ class APIService {
     // MARK: - GET (Async)
     func get<T: Decodable>(_ endpoint: String) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -51,6 +52,7 @@ class APIService {
     // MARK: - POST (Async)
     func post<T: Decodable, U: Encodable>(_ endpoint: String, body: U) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -73,6 +75,7 @@ class APIService {
     // MARK: - PUT (Async)
     func put<T: Decodable, U: Encodable>(_ endpoint: String, body: U) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -95,6 +98,7 @@ class APIService {
     // MARK: - DELETE (Async)
     func delete(_ endpoint: String) async throws {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -113,6 +117,7 @@ class APIService {
     // MARK: - Upload CSV (Multipart)
     func uploadCSV(endpoint: String, csvData: Data, fileName: String) async throws {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -144,6 +149,7 @@ class APIService {
         formDataParts: [FormDataPart]
     ) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
 
@@ -189,6 +195,7 @@ class APIService {
 
         // Vérification du code HTTP
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("unknown response")
             throw APIError.unknown
         }
 
@@ -196,10 +203,13 @@ class APIService {
         case 200...299:
             break
         case 401:
+            print("unauthorized")
             throw APIError.unauthorized
         case 403:
+            print("forbidden")
             throw APIError.forbidden
         default:
+            print("unexepté code HTTP \(httpResponse.statusCode)")
             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
         }
 
@@ -213,6 +223,7 @@ class APIService {
             let decodedData = try JSONDecoder().decode(T.self, from: data)
             return decodedData
         } catch {
+            print("error decoding JSON: \(error)\n")
             throw APIError.decodingError(error)
         }
     }
@@ -222,6 +233,7 @@ class APIService {
         formDataParts: [FormDataPart]
     ) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
 
@@ -267,6 +279,7 @@ class APIService {
 
         // Vérification du code HTTP
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("unknow")
             throw APIError.unknown
         }
 
@@ -274,10 +287,13 @@ class APIService {
         case 200...299:
             break
         case 401:
+            print("unauthorized")
             throw APIError.unauthorized
         case 403:
+            print("forbidden")
             throw APIError.forbidden
         default:
+            print("unexepté code HTTP \(httpResponse.statusCode)")
             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
         }
 
@@ -291,6 +307,7 @@ class APIService {
     }
     func getRaw(_ endpoint: String) async throws -> Data {
         guard let url = URL(string: baseURL + endpoint) else {
+            print("invalid url")
             throw APIError.invalidURL
         }
         
@@ -307,12 +324,15 @@ class APIService {
         if let httpResponse = response as? HTTPURLResponse {
             switch httpResponse.statusCode {
             case 200...299:
-                return data
+                break
             case 401:
+                print("unauthorized")
                 throw APIError.unauthorized
             case 403:
+                print("forbidden")
                 throw APIError.forbidden
             default:
+                print("unexepté code HTTP \(httpResponse.statusCode)")
                 throw APIError.unexpectedStatusCode(httpResponse.statusCode)
             }
         }
@@ -328,28 +348,32 @@ class APIService {
     }
 
     private func decodeJSON<T: Decodable>(_ data: Data) throws -> T {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let decoder = JSONDecoder.customISO8601Decoder
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
+            print("Erreur lors du décodage JSON: \(error)")
             throw APIError.decodingError(error)
         }
     }
 
     private func validateResponse(_ response: URLResponse) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("unknown response")
             throw APIError.unknown
         }
         
         switch httpResponse.statusCode {
         case 200...299:
-            return
+            break
         case 401:
+            print("unauthorized")
             throw APIError.unauthorized
         case 403:
+            print("forbidden")
             throw APIError.forbidden
         default:
+            print("unexepté code HTTP \(httpResponse.statusCode)")
             throw APIError.unexpectedStatusCode(httpResponse.statusCode)
         }
     }

@@ -53,7 +53,7 @@ struct MainTabView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Logout") {
-                    auth.logout()
+                    Task {await auth.logout()}
                 }
             }
         }

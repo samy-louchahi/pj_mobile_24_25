@@ -29,7 +29,7 @@ class AuthViewModel: ObservableObject {
     private let apiService = APIService()
 
     init() {
-        checkIfLoggedIn()
+        Task {await checkIfLoggedIn()}
     }
 
     // MARK: - Methods
@@ -83,22 +83,69 @@ class AuthViewModel: ObservableObject {
     }
 
     /// Fonction pour gérer la déconnexion
-    func logout() {
-        UserDefaults.standard.removeObject(forKey: "token")
-        isLoggedIn = false
-        email = ""
-        username = ""
-        password = ""
-        errorMessage = nil
-        isLoading = false
-    }
+    func logout() async {
+            UserDefaults.standard.removeObject(forKey: "token")
+            isLoggedIn = false
+        }
 
     /// Vérifie si un token est présent pour maintenir la connexion
-    func checkIfLoggedIn() {
-        if UserDefaults.standard.string(forKey: "token") != nil {
-            isLoggedIn = true
+    func checkIfLoggedIn() async {
+            guard let token = UserDefaults.standard.string(forKey: "token") else {
+                isLoggedIn = false
+                return
+            }
+
+            // 1️⃣ Vérifier si le token est un JWT valide et non expiré
+            if !isTokenValid(token) {
+                print("Token expiré ou invalide.")
+                await logout()
+                return
+            }
+
+            // 2️⃣ Vérifier avec le backend si le token est encore valide
+            await validateToken(token)
         }
-    }
+    private func isTokenValid(_ token: String) -> Bool {
+            let parts = token.split(separator: ".")
+            guard parts.count == 3 else { return false }
+
+            let payloadData = parts[1] // Le payload du JWT (Base64)
+            guard let decodedData = Data(base64Encoded: String(payloadData) + "==") else { return false }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: decodedData, options: []) as? [String: Any],
+                   let exp = json["exp"] as? TimeInterval {
+                    let expirationDate = Date(timeIntervalSince1970: exp)
+                    return expirationDate > Date()
+                }
+            } catch {
+                print("Erreur lors de la lecture du JWT : \(error)")
+                return false
+            }
+
+            return false
+        }
+    private func validateToken(_ token: String) async {
+            do {
+                let response: TokenValidationResponse = try await apiService.get("/auth/validate-token")
+                
+                if response.isValid {
+                    isLoggedIn = true
+                } else {
+                    print("Token invalide, déconnexion.")
+                    await logout()
+                }
+            } catch {
+                print("Erreur de validation du token : \(error)")
+                await logout()
+            }
+        }
+
+
+    
+}
+struct TokenValidationResponse: Codable {
+    let isValid: Bool
 }
 
 /// La réponse JSON attendue après le login (token)

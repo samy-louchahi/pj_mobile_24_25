@@ -30,8 +30,5 @@ struct Stock: Codable, Identifiable {
         case gameId = "game_id"
         case initialQuantity = "initial_quantity"
         case currentQuantity = "current_quantity"
-        case session = "Session"
-        case seller = "Seller"
-        case game = "Game"
     }
 }

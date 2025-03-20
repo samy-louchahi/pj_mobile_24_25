@@ -9,24 +9,20 @@ import SwiftUI
 
 @MainActor
 class BuyerViewModel: ObservableObject {
-    // Liste des buyers
     @Published var buyers: [Buyer] = []
     @Published var loading: Bool = false
     @Published var errorMessage: String?
 
-    // Champs du formulaire (Add/Update)
     @Published var name: String = ""
     @Published var email: String = ""
     @Published var phone: String = ""
     @Published var address: String = ""
 
-    // Pour différencier "ajout" vs "édition"
     @Published var editingBuyer: Buyer?
     @Published var showForm: Bool = false
 
     private let buyerService = BuyerService.shared
 
-    // Chargement de la liste
     func fetchBuyers() async {
         loading = true
         do {
@@ -37,7 +33,6 @@ class BuyerViewModel: ObservableObject {
         loading = false
     }
 
-    // Ouvrir le formulaire pour ajouter
     func openAddForm() {
         editingBuyer = nil
         name = ""
@@ -47,7 +42,6 @@ class BuyerViewModel: ObservableObject {
         showForm = true
     }
 
-    // Ouvrir le formulaire pour modifier
     func openEditForm(buyer: Buyer) {
         editingBuyer = buyer
         name = buyer.name

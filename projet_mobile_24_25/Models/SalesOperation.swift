@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum SalesOpStatus: String, Codable, CaseIterable {
+enum SalesOpStatus: String, Codable, CaseIterable, DateCodable {
     case enCours  = "en cours"
     case finalise = "finalisé"
     case annule   = "annulé"
