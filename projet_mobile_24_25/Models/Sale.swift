@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Sale: Codable, Identifiable {
+struct Sale: Codable, Identifiable, DateCodable{
     let saleId: Int
     var id: Int { saleId }
 

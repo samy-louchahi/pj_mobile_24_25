@@ -10,14 +10,15 @@ import SwiftUI
 
 struct SaleView: View {
     @ObservedObject var viewModel = SaleViewModel()
-
+    @State private var showAddSaleWizard = false
+    
     var body: some View {
         VStack {
             Text("Gestion des Ventes")
                 .font(.largeTitle)
                 .bold()
                 .padding()
-
+            
             if viewModel.loading {
                 ProgressView("Chargement des ventes...")
             } else if viewModel.sales.isEmpty {
@@ -33,7 +34,7 @@ struct SaleView: View {
                     Text("Ajoutez une nouvelle vente pour suivre les transactions.")
                         .foregroundColor(.gray)
                     Button("+ Enregistrer une vente") {
-                        // Afficher la modal d’ajout
+                        showAddSaleWizard = true
                     }
                     .padding()
                     .background(Color.blue)
@@ -43,6 +44,9 @@ struct SaleView: View {
             } else {
                 SaleListView(viewModel: viewModel)
             }
+        }
+        .sheet(isPresented: $showAddSaleWizard) { // Présente AddSaleWizardView en tant que modale
+            AddSaleWizardView(viewModel: viewModel)
         }
     }
 }

@@ -262,22 +262,46 @@ struct AddSaleWizardView: View {
                     print("Erreur : aucune session active trouvée")
                     return
                 }
+
+                // Étape 1 : Créer la vente
                 let saleToFinalize = SaleCreate(
                     buyer_id: selectedBuyer,
                     session_id: sessionId,
                     sale_date: formattedDate(saleDate),
                     sale_status: saleStatus
                 )
-                print("Finalisation de la vente \(saleToFinalize)")
-                await viewModel.createSale(saleToFinalize)
+
+                let createdSale = try await viewModel.createSale(saleToFinalize)
+
+                // Étape 2 : Créer les SaleDetails
+                for chosenGame in chosenGames {
+                    let saleDetail = SaleDetailCreate(
+                        sale_id: createdSale!.saleId,
+                        deposit_game_id: chosenGame.depositGameId,
+                        quantity: chosenGame.quantity
+                    )
+                    try await viewModel.createSaleDetail(saleDetail)
+                }
+
+                // Étape 3 : Créer l'opération de vente (commission, statut)
+                let commission = 0.1 // Exemple de commission (10%)
+                let saleOperation = SaleOperationCreate(
+                    sale_id: createdSale!.saleId,
+                    commission: commission,
+                    sale_status: saleStatus,
+                    sale_date: formattedDate(saleDate)
+                )
+                try await viewModel.createSalesOperation(saleOperation)
+
+                print("Vente et détails créés avec succès !")
             } catch {
-                print("Erreur lors de la finalisation de la vente: \(error)")
+                print("Erreur lors de la finalisation de la vente : \(error)")
             }
         }
     }
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: date)
     }
 }

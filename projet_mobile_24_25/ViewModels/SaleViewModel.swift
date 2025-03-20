@@ -69,15 +69,18 @@ class SaleViewModel: ObservableObject {
     }
     
     // MARK: - Create Sale
-    func createSale(_ saleData: SaleCreate) async {
+    func createSale(_ saleData: SaleCreate) async -> Sale? {
+        loading = true
+        defer { loading = false } 
+
         do {
-            loading = true
-            _ = try await saleService.createSale(saleData)
+            let newSale = try await saleService.createSale(saleData)
             await fetchSales()
+            return newSale
         } catch {
             errorMessage = "Erreur création vente : \(error.localizedDescription)"
+            return nil
         }
-        loading = false
     }
     
     // MARK: - Update Sale
@@ -102,6 +105,25 @@ class SaleViewModel: ObservableObject {
             errorMessage = "Erreur suppression vente : \(error.localizedDescription)"
         }
         loading = false
+    }
+    // Création des détails de vente (SaleDetails)
+    func createSaleDetail(_ saleDetailData: SaleDetailCreate) async {
+        do {
+            _ = try await saleService.createSaleDetail(saleDetailData)
+            print("SaleDetail créé avec succès !")
+        } catch {
+            errorMessage = "Erreur création SaleDetail : \(error.localizedDescription)"
+        }
+    }
+
+    // Création de l'opération de vente (SalesOperation)
+    func createSalesOperation(_ salesOpData: SaleOperationCreate) async {
+        do {
+            _ = try await saleService.createSalesOperation(salesOpData)
+            print("SalesOperation créée avec succès !")
+        } catch {
+            errorMessage = "Erreur création SalesOperation : \(error.localizedDescription)"
+        }
     }
 }
 extension SaleViewModel {

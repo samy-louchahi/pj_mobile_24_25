@@ -56,10 +56,17 @@ struct SaleListView: View {
             .padding(.horizontal)
 
             // Liste des ventes
-            List(filteredSales) { sale in
+            List(filteredSales, id: \.id) { sale in
                 SaleCardView(
-                    sale: sale, seller: sale.saleDetails?[0].seller,
-                    onDelete: { id in Task { await viewModel.deleteSale(id: id) } }, onUpdate: { _ in selectedSale = sale; showUpdateSale = true },
+                    sale: sale,
+                    seller: sale.saleDetails?.first?.seller!, 
+                    onDelete: { id in
+                        Task { await viewModel.deleteSale(id: id) }
+                    },
+                    onUpdate: { _ in
+                        selectedSale = sale
+                        showUpdateSale = true
+                    },
                     onFinalize: {
                         Task {
                             await viewModel.updateSale(
