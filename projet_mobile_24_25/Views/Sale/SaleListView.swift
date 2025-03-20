@@ -59,7 +59,7 @@ struct SaleListView: View {
             List(filteredSales, id: \.id) { sale in
                 SaleCardView(
                     sale: sale,
-                    seller: sale.saleDetails?.first?.seller!, 
+                    seller: sale.saleDetails?.isEmpty ?? true ? nil : viewModel.sellers.first(where: { $0.id == sale.saleDetails!.first!.sellerId }),
                     onDelete: { id in
                         Task { await viewModel.deleteSale(id: id) }
                     },
