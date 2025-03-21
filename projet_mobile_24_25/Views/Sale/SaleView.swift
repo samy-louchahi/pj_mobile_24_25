@@ -19,9 +19,7 @@ struct SaleView: View {
                 .bold()
                 .padding()
             
-            if viewModel.loading {
-                ProgressView("Chargement des ventes...")
-            } else if viewModel.sales.isEmpty {
+             if viewModel.sales.isEmpty {
                 VStack {
                     Image(systemName: "bag.fill")
                         .resizable()
@@ -45,8 +43,11 @@ struct SaleView: View {
                 SaleListView(viewModel: viewModel)
             }
         }
-        .sheet(isPresented: $showAddSaleWizard) { // Présente AddSaleWizardView en tant que modale
+        .sheet(isPresented: $showAddSaleWizard) {
             AddSaleWizardView(viewModel: viewModel)
+        }
+        .onAppear{
+            Task{ await viewModel.fetchSales()}
         }
     }
 }

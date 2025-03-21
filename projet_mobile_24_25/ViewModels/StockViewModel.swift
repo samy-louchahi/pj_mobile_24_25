@@ -10,16 +10,21 @@ import SwiftUI
 @MainActor
 class StockViewModel: ObservableObject {
     @Published var sessions: [Session] = []
-    @Published var stocksDict: [Int: Stock] = [:]  // Dictionnaire indexé par stockId
+    @Published var stocksDict: [Int: Stock] = [:]// Dictionnaire indexé par stockId
+    @Published var games: [Game] = []
     @Published var selectedSession: Int? = nil
     @Published var loading: Bool = false
     @Published var errorMessage: String?
 
     private let sessionService = SessionService.shared
     private let stockService = StockService.shared
+    private let gameService = GameService.shared
 
     init() {
-        Task { await fetchSessions() }
+        Task {
+            await fetchSessions()
+            await fetchGames()  
+        }
     }
     
     func fetchSessions() async {
@@ -31,6 +36,13 @@ class StockViewModel: ObservableObject {
             }
         } catch {
             errorMessage = "Erreur lors de la récupération des sessions: \(error.localizedDescription)"
+        }
+    }
+    func fetchGames() async {
+        do {
+            games = try await gameService.getGames()
+        } catch {
+            errorMessage = "Erreur lors de la récupération des stocks: \(error.localizedDescription)"
         }
     }
     

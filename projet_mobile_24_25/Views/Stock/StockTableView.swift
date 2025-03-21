@@ -10,9 +10,15 @@ import SwiftUI
 
 struct StockTableView: View {
     let stocksDict: [Int: Stock]
+    let games : [Game]
     
     // Transformer le dictionnaire en tableau pour itérer
     private var stocks: [Stock] { Array(stocksDict.values) }
+    
+    private func gameName(for gameId: Int) -> String {
+           games.first(where: { $0.gameId == gameId })?.name ?? "Inconnu"
+       }
+       
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -20,9 +26,9 @@ struct StockTableView: View {
                 .font(.headline)
                 .padding(.bottom, 4)
             
-            ForEach(stocks) { stock in
+            ForEach(stocks) { (stock : Stock) in
                 HStack {
-                    Text("Jeu ID: \(stock.gameId)")
+                    Text("Jeu : \(gameName(for: stock.gameId))")
                         .frame(width: 80, alignment: .leading)
                     Spacer()
                     Text("Initial: \(stock.initialQuantity)")

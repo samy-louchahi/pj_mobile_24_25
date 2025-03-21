@@ -62,7 +62,7 @@ struct StockView: View {
                                 .padding(.horizontal)
                                 .padding(.top)
                             
-                            StockTableView(stocksDict: viewModel.stocksDict)
+                            StockTableView(stocksDict: viewModel.stocksDict, games: viewModel.games)
                                 .padding()
                         }
                     }
