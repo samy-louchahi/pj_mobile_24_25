@@ -114,7 +114,7 @@ struct SaleGameRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("Jeux :\(depositGame.gameId)").font(.headline)
+                Text("Jeux :\(depositGame.game?.name ?? "n/a")").font(.headline)
                 Text("Disponible : \(available)").font(.subheadline)
             }
             Spacer()
@@ -127,10 +127,16 @@ struct SaleGameRow: View {
                         return 0
                     },
                     set: { newValue in
+                        let clampedValue = min(newValue, available)
+                        
                         if let index = chosenGames.firstIndex(where: { $0.depositGameId == depositGame.depositGameId }) {
-                            chosenGames[index].quantity = newValue
-                        } else if newValue > 0 {
-                            let newGame = ChosenSaleGame(id:  ObjectIdentifier(UUID() as AnyObject), depositGameId: depositGame.depositGameId, quantity: newValue)
+                            chosenGames[index].quantity = clampedValue
+                        } else if clampedValue > 0 {
+                            let newGame = ChosenSaleGame(
+                                id: ObjectIdentifier(UUID() as AnyObject),
+                                depositGameId: depositGame.depositGameId,
+                                quantity: clampedValue
+                            )
                             chosenGames.append(newGame)
                         }
                     }

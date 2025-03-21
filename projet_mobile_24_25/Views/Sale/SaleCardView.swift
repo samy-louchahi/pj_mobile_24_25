@@ -144,6 +144,6 @@ struct SaleCardView: View {
 
     private func handleDownloadInvoice() {
         print("Téléchargement de la facture pour la vente #\(sale.saleId)")
-        // Implémentation du téléchargement ici
+        
     }
 }

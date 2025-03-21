@@ -61,7 +61,7 @@ struct DepositListView: View {
                 }
             }
             .sheet(isPresented: $showAddDeposit) {
-                AddDepositView(viewModel: DepositViewModel())
+                AddDepositView(viewModel: viewModel)
             }
             .onAppear {
                 Task {await viewModel.fetchDeposits()}

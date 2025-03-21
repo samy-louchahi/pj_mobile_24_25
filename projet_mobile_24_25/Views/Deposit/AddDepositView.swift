@@ -10,6 +10,7 @@ struct DepositGameEntry: Identifiable {
 struct AddDepositView: View {
     @ObservedObject var viewModel: DepositViewModel
     @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     // Champs du formulaire
     @State private var selectedSeller: Int = 0
@@ -163,6 +164,7 @@ extension AddDepositView {
         )
         
         Task {await viewModel.createDeposit(depositData)}
+        dismiss()
     }
     
     private func handleClose() {

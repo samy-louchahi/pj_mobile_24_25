@@ -71,14 +71,6 @@ struct GameDetailView: View {
             }
             .padding(.top, 8)
 
-            ForEach(viewModel.detailStocks, id: \.id) { st in
-                VStack(alignment: .leading) {
-                    
-                    Text("Init: \(st.initialQuantity) / Current: \(st.currentQuantity)")
-                }
-                .padding(.vertical, 4)
-                Divider()
-            }
         }
         .padding()
     }

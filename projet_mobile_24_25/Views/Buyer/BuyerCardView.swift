@@ -21,7 +21,7 @@ struct BuyerCardView: View {
                 .font(.subheadline)
             Text("Téléphone: \(buyer.phone ?? "")")
                 .font(.subheadline)
-            Text("Adresse: \(buyer.address ?? "")")
+            Text("Adresse: \(buyer.address ?? "Non renseignée")")
                 .font(.subheadline)
 
             HStack {
