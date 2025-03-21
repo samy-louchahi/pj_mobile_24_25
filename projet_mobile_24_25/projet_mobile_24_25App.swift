@@ -13,13 +13,8 @@ struct projet_mobile_24_25App: App {
 
     var body: some Scene {
         WindowGroup {
-            if authViewModel.isLoggedIn {
-                            MainTabView()
-                                .environmentObject(authViewModel)
-                        } else {
-                            LoginView()
-                                .environmentObject(authViewModel)
-                        }
+            ContentView()
+                .environmentObject(authViewModel)
         }
     }
 }

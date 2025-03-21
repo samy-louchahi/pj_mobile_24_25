@@ -8,17 +8,13 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world! ✅")
-        }
-        .padding()
-    }
-}
+    @EnvironmentObject var authViewModel: AuthViewModel
 
-#Preview {
-    ContentView()
+    var body: some View {
+        if authViewModel.isLoggedIn {
+            MainTabView()
+        } else {
+            LoginView()
+        }
+    }
 }
