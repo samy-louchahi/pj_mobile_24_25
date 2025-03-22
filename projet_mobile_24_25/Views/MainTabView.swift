@@ -50,6 +50,11 @@ struct MainTabView: View {
                     Image(systemName: "dollarsign.arrow.trianglehead.counterclockwise.rotate.90")
                     Text("Ventes")
                 }
+            GestionnaireListView()
+                .tabItem{
+                    Image(systemName: "person.crop.circle.badge.shield.checkmark")
+                    Text("Gestionnaires")
+            }
 
             SettingsView() // 👉 on ajoute une tab pour la déconnexion
                 .tabItem {
