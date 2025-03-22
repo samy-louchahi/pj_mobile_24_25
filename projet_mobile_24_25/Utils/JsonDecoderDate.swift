@@ -18,6 +18,7 @@ extension JSONDecoder {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         decoder.dateDecodingStrategy = .formatted(formatter)
+        decoder.keyDecodingStrategy = .useDefaultKeys
         return decoder
     }
 }

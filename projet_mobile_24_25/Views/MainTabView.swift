@@ -7,8 +7,6 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @EnvironmentObject var auth: AuthViewModel
-
     var body: some View {
         TabView {
             BuyerListView()
@@ -22,40 +20,42 @@ struct MainTabView: View {
                     Image(systemName: "person.fill")
                     Text("Vendeurs")
                 }
+
             GameListView()
                 .tabItem {
                     Image(systemName: "dice.fill")
                     Text("Jeux")
                 }
+
             SessionListView()
                 .tabItem {
                     Image(systemName: "cursorarrow.click.badge.clock")
                     Text("Sessions")
                 }
+
             DepositListView()
                 .tabItem {
                     Image(systemName: "archivebox.fill")
                     Text("Dépôts")
                 }
+
             StockView()
                 .tabItem {
                     Image(systemName: "shippingbox.fill")
                     Text("Stock")
                 }
+
             SaleView()
                 .tabItem {
                     Image(systemName: "dollarsign.arrow.trianglehead.counterclockwise.rotate.90")
                     Text("Ventes")
                 }
-                
-            
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Logout") {
-                    Task {await auth.logout()}
+
+            SettingsView() // 👉 on ajoute une tab pour la déconnexion
+                .tabItem {
+                    Image(systemName: "gear")
+                    Text("Paramètres")
                 }
-            }
         }
     }
 }

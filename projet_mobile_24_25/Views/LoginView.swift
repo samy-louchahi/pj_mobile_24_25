@@ -9,89 +9,81 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var viewModel = AuthViewModel()
+    @EnvironmentObject var authviewModel: AuthViewModel
 
     var body: some View {
-        NavigationView {
-            VStack {
-                Text("Connexion")
-                    .font(.title)
+        VStack {
+            Text("Gestion des dépôts et ventes de jeux")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .padding(.top, 32)
+
+            Image(systemName: "gamecontroller.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 60, height: 60)
+                .foregroundColor(.blue)
+                .padding(.vertical, 8)
+
+            Text("Connexion")
+                .font(.title)
+                .fontWeight(.semibold)
+                .padding(.bottom, 16)
+
+            if let error = authviewModel.errorMessage {
+                Text(error)
+                    .foregroundColor(.red)
                     .padding()
+            }
 
-                // Affichage de l'erreur
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .foregroundColor(.red)
-                        .padding()
-                }
+            Picker("Rôle", selection: $authviewModel.role) {
+                Text("Admin").tag(UserRole.admin)
+                Text("Gestionnaire").tag(UserRole.gestionnaire)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
 
-                Picker("Rôle", selection: $viewModel.role) {
-                    Text("Admin").tag(UserRole.admin)
-                    Text("Gestionnaire").tag(UserRole.gestionnaire)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-
-                // Champs de texte
-                if viewModel.role == .admin {
-                    TextField("Email", text: $viewModel.email)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.none)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                } else {
-                    TextField("Nom d'utilisateur", text: $viewModel.username)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.none)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                }
-
-                SecureField("Mot de passe", text: $viewModel.password)
+            if authviewModel.role == .admin {
+                TextField("Email", text: $authviewModel.email)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.none)
                     .padding()
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
-
-                Button(action: {
-                    Task {await viewModel.login()}
-                }) {
-                    if viewModel.isLoading {
-                        ProgressView()
-                    } else {
-                        Text("Se connecter")
-                            .fontWeight(.semibold)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-                .padding(.vertical)
-
-                // Navigation selon isLoggedIn
-                if viewModel.isLoggedIn {
-                    // Méthode 1 : on affiche un NavigationLink invisible pour "pousser" vers l'écran principal
-                    NavigationLink(
-                        destination: MainTabView(),
-                        isActive: $viewModel.isLoggedIn
-                    ) {
-                        EmptyView()
-                    }
-                }
-
-                Spacer()
+            } else {
+                TextField("Nom d'utilisateur", text: $authviewModel.username)
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.none)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
             }
-            .padding()
-            .navigationBarHidden(true)
-        }
-        .navigationViewStyle(StackNavigationViewStyle())
-    }
-}
 
-#Preview{
-    LoginView()
+            SecureField("Mot de passe", text: $authviewModel.password)
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+
+            Button(action: {
+                Task { await authviewModel.login() }
+            }) {
+                if authviewModel.isLoading {
+                    ProgressView()
+                } else {
+                    Text("Se connecter")
+                        .fontWeight(.semibold)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+            .padding(.vertical)
+
+            Spacer()
+        }
+        .padding()
+    }
 }

@@ -278,6 +278,7 @@ struct AddSaleWizardView: View {
                 )
 
                 let createdSale = try await viewModel.createSale(saleToFinalize)
+                print("saleId \(createdSale?.saleId ?? 00)")
 
                 // Étape 2 : Créer les SaleDetails
                 for chosenGame in chosenGames {
@@ -286,7 +287,7 @@ struct AddSaleWizardView: View {
                         deposit_game_id: chosenGame.depositGameId,
                         quantity: chosenGame.quantity
                     )
-                    try await viewModel.createSaleDetail(saleDetail)
+                    Task {await viewModel.createSaleDetail(saleDetail)}
                 }
 
                 // Étape 3 : Créer l'opération de vente (commission, statut)

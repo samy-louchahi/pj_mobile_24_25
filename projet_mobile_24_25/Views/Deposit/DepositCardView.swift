@@ -32,11 +32,12 @@ struct DepositCardView: View {
                     .foregroundColor(.blue)
             }
             HStack {
-                Button(action: {
-                    generatePdf()
-                }) {
-                    Label("Télécharger", systemImage: "doc")
+                Button("📄 Générer PDF") {
+                    if let data = PDFUtils.generatePdf(for: deposit) {
+                        PDFUtils.sharePdf(data)
+                    }
                 }
+                .buttonStyle(BorderlessButtonStyle())
                 Spacer()
                 Button(action: {
                     onDelete(deposit.depositId)
@@ -44,15 +45,12 @@ struct DepositCardView: View {
                     Image(systemName: "trash")
                         .foregroundColor(.red)
                 }
+                .buttonStyle(BorderlessButtonStyle())
             }
         }
         .padding()
         .background(Color.white)
         .cornerRadius(8)
         .shadow(radius: 2)
-    }
-    
-    func generatePdf() {
-        // Implémentez ici la logique de génération de PDF
     }
 }

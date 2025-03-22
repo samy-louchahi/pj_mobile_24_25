@@ -17,17 +17,21 @@ struct SaleCardView: View {
 
     var totalSale: Double {
         sale.saleDetails?.reduce(0) { acc, detail in
-            let exemplaires = detail.depositGame?.exemplaires ?? [:]
-            let soldExemplaires = exemplaires.values.prefix(detail.quantity)
-            let subTotal = soldExemplaires.reduce(0) { subSum, ex in subSum + (ex.price ?? 0) }
+            guard let exemplaires = detail.depositGame?.exemplaires else { return acc }
+
+            let sortedExemplaires = exemplaires.sorted { $0.key < $1.key }.map { $0.value }
+
+            let soldExemplaires = sortedExemplaires.prefix(detail.quantity)
+
+            let subTotal = soldExemplaires.reduce(0) { sum, ex in sum + (ex.price ?? 0) }
+
             return acc + subTotal
         } ?? 0
     }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Vente #\(sale.saleId ?? 0)")
+                Text("Vente #\(sale.saleId)")
                     .font(.headline)
                     .bold()
                 Spacer()
@@ -113,6 +117,7 @@ struct SaleCardView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
+            .buttonStyle(BorderlessButtonStyle())
         }
         .padding()
         .background(Color.white)
@@ -143,7 +148,12 @@ struct SaleCardView: View {
     }
 
     private func handleDownloadInvoice() {
-        print("Téléchargement de la facture pour la vente #\(sale.saleId)")
+        print("📄 Téléchargement de la facture pour la vente #\(sale.saleId)")
         
+        if let data = PDFUtils.generateInvoicePdf(for: sale, seller: seller) {
+            PDFUtils.sharePdf(data)
+        } else {
+            print("Erreur lors de la génération du PDF")
+        }
     }
 }

@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 class StockViewModel: ObservableObject {
     @Published var sessions: [Session] = []
-    @Published var stocksDict: [Int: Stock] = [:]// Dictionnaire indexé par stockId
+    @Published var stocksDict: [Int: Stock] = [:]
     @Published var games: [Game] = []
     @Published var selectedSession: Int? = nil
     @Published var loading: Bool = false

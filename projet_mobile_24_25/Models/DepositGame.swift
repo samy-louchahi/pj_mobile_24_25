@@ -31,8 +31,8 @@ struct DepositGame: Codable, Identifiable {
         case depositGameId = "deposit_game_id"
         case depositId = "deposit_id"
         case gameId = "game_id"
-        case fees
-        case exemplaires
+        case fees = "fees"
+        case exemplaires = "exemplaires"
         case game = "Game"
     }
 }

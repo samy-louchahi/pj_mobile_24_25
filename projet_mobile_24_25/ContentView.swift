@@ -11,10 +11,15 @@ struct ContentView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
 
     var body: some View {
-        if authViewModel.isLoggedIn {
-            MainTabView()
-        } else {
-            LoginView()
+        ZStack {
+            if authViewModel.isLoggedIn {
+                MainTabView()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                LoginView()
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.4), value: authViewModel.isLoggedIn)
     }
 }

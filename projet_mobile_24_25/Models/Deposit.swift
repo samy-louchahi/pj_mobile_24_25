@@ -19,10 +19,9 @@ struct Deposit: Codable, Identifiable, DateCodable {
     let tag: String?
     let discountFees: Double?
 
-    // Si tu veux récupérer l'association Seller ou Session côté Swift :
-    // let Seller: Seller?
+    var seller: Seller?
     // let Session: Session?
-    // let DepositGames: [DepositGame]?
+     var depositGames: [DepositGame]?
 
     enum CodingKeys: String, CodingKey {
         case depositId   = "deposit_id"
@@ -31,5 +30,7 @@ struct Deposit: Codable, Identifiable, DateCodable {
         case sessionId   = "session_id"
         case tag
         case discountFees = "discount_fees"
+        case seller = "Seller"
+        case depositGames = "DepositGames"
     }
 }
