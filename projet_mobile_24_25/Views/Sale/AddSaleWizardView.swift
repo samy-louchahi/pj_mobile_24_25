@@ -268,8 +268,10 @@ struct AddSaleWizardView: View {
                     let saleDetail = SaleDetailCreate(
                         sale_id: createdSale!.saleId,
                         deposit_game_id: detail.depositGame.depositGameId,
-                        quantity: detail.quantity // ← quantité réelle sélectionnée
+                        quantity: detail.quantity,
+                        selected_keys: detail.selectedExemplaireKeys 
                     )
+                    print("detail saldetail : \(saleDetail)")
                     await viewModel.createSaleDetail(saleDetail)
                 }
 

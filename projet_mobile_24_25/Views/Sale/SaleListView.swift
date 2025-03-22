@@ -60,12 +60,7 @@ struct SaleListView: View {
                 List(filteredSales, id: \.id) { sale in
                     let localDetails: [LocalSaleDetail]? = sale.saleDetails?.compactMap { detail in
                         guard let depositGame = detail.depositGame else { return nil }
-                        print("detail \(detail)")
-
-                        // Tri stable des clés pour simuler les exemplaires vendus
-                        let sortedKeys = depositGame.exemplaires?.keys.sorted() ?? []
-                        let selectedKeys = Array(sortedKeys.prefix(detail.quantity))
-
+                        let selectedKeys = detail.selectedKeys ?? []
                         return LocalSaleDetail(depositGame: depositGame, selectedExemplaireKeys: selectedKeys)
                     }
 

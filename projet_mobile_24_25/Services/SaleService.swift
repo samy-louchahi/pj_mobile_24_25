@@ -34,6 +34,7 @@ struct SaleDetailCreate: Codable {
     let sale_id: Int
     let deposit_game_id: Int
     let quantity: Int?
+    let selected_keys: [String]
 }
 
 

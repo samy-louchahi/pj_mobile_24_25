@@ -56,17 +56,30 @@ struct AddDepositView: View {
                 // Section Jeux à déposer
                 Section(header: Text("Jeux à déposer")) {
                     ForEach($depositItems, id: \.id) { $item in
-                        DepositGameEntryCardView(
-                            entry: $item,
-                            games: viewModel.games,
-                            onUpdateEntry: updateDepositItem,
-                            onAddExemplaire: addExemplaireToItem,
-                            onRemoveEntry: removeDepositItem
-                        )
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Button(action: {
+                                    removeDepositItem(id: item.id)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(BorderlessButtonStyle())
+                            }
+                            DepositGameEntryCardView(
+                                entry: $item,
+                                games: viewModel.games,
+                                onUpdateEntry: updateDepositItem,
+                                onAddExemplaire: addExemplaireToItem,
+                                onRemoveEntry: removeDepositItem
+                            )
+                        }
+                        .padding(.vertical, 4)
                     }
                     Button("Ajouter un jeu") {
                         addDepositItem()
                     }
+                    .buttonStyle(BorderlessButtonStyle())
                 }
                 
                 // Section d'affichage de l'erreur (si présente)

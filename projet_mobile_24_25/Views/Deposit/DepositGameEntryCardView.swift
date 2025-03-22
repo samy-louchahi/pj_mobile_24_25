@@ -56,6 +56,13 @@ struct DepositGameEntryCardView: View {
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
+                        Button(action: {
+                                entry.exemplaires.removeValue(forKey: key)
+                            }) {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
                     }
                 }
             }
@@ -64,6 +71,7 @@ struct DepositGameEntryCardView: View {
                 onAddExemplaire(entry.id)
             }
             .padding(.top, 4)
+            .buttonStyle(BorderlessButtonStyle())
         }
         .padding()
         .background(Color(UIColor.secondarySystemBackground))

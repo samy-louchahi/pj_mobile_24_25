@@ -39,10 +39,9 @@ struct SaleCardView: View {
         return saleDetails.compactMap { detail in
             guard let dg = detail.depositGame else { return nil }
 
-            let sortedKeys = dg.exemplaires?.keys.sorted() ?? []
-            let selectedKeys = Array(sortedKeys.prefix(detail.quantity)).sorted()
-
-            return LocalSaleDetail(depositGame: dg, selectedExemplaireKeys: selectedKeys)
+            let keys = detail.selectedKeys ?? []
+            print("keys \(keys)")
+            return LocalSaleDetail(depositGame: dg, selectedExemplaireKeys: keys)
         }
     }
     
@@ -97,7 +96,7 @@ struct SaleCardView: View {
                                 ForEach(local.selectedExemplaireKeys, id: \.self) { key in
                                     if let ex = local.depositGame.exemplaires?[key] {
                                         HStack {
-                                            Text("• \(key)")
+                                            Text("• État: ")
                                                 .font(.caption)
                                             Spacer()
                                             Text("\(ex.state ?? "État ?")")

@@ -16,6 +16,7 @@ struct SaleDetail: Codable, Identifiable {
     let sellerId: Int
     let depositGameId: Int
     let quantity: Int
+    let selectedKeys: [String]?
 
     // 🔹 Relations
     var sale: Sale?
@@ -30,6 +31,7 @@ struct SaleDetail: Codable, Identifiable {
         case quantity
         case sale = "Sale"
         case depositGame = "DepositGame"
+        case selectedKeys = "selected_keys"
         case seller = "Seller"
     }
 }
