@@ -36,3 +36,12 @@ struct DepositGame: Codable, Identifiable {
         case game = "Game"
     }
 }
+extension DepositGame: Hashable {
+    static func == (lhs: DepositGame, rhs: DepositGame) -> Bool {
+        return lhs.depositGameId == rhs.depositGameId
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(depositGameId)
+    }
+}

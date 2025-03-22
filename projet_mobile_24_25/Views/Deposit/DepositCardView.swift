@@ -34,7 +34,7 @@ struct DepositCardView: View {
             HStack {
                 Button("📄 Générer PDF") {
                     if let data = PDFUtils.generatePdf(for: deposit) {
-                        PDFUtils.sharePdf(data)
+                        PDFUtils.sharePdf(data, "Dépot #\(deposit.depositId).pdf")
                     }
                 }
                 .buttonStyle(BorderlessButtonStyle())

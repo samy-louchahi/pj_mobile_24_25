@@ -9,7 +9,10 @@ import SwiftUI
 struct ChosenSaleGame: Identifiable {
     var id: ObjectIdentifier
     let depositGameId: Int
-    var quantity: Int
+    var selectedExemplaireKeys: [String]
+    var quantity: Int {
+        selectedExemplaireKeys.count
+    }
 }
 
 struct SaleStep1View: View {
@@ -69,82 +72,53 @@ struct SaleStep2View: View {
     let onBack: () -> Void
 
     @State private var localError: String?
+    @State private var selectedGameForDetails: DepositGame? = nil
 
     var body: some View {
-        Form {
-            Section(header: Text("Sélectionnez les jeux à vendre")) {
-                ForEach(depositGames, id: \.id) { dg in
-                    SaleGameRow(depositGame: dg, chosenGames: $chosenGames)
-                }
-            }
-
-            if let error = localError {
-                Text(error).foregroundColor(.red)
-            }
-
-            HStack {
-                Button("Retour") { onBack() }
-                Spacer()
-                Button("Étape Suivante") {
-                    if !chosenGames.contains(where: { $0.quantity > 0 }) {
-                        localError = "Veuillez sélectionner au moins un jeu."
-                    } else {
-                        localError = nil
-                        onNext()
-                    }
-                }
-            }
-        }
-        .navigationTitle("Étape 2")
-    }
-}
-
-struct SaleGameRow: View {
-    let depositGame: DepositGame
-    @Binding var chosenGames: [ChosenSaleGame]
-
-    var available: Int {
-        depositGame.exemplaires?.count ?? 0
-    }
-
-    var currentQty: Int {
-        chosenGames.first(where: { $0.depositGameId == depositGame.depositGameId })?.quantity ?? 0
-    }
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text("Jeux :\(depositGame.game?.name ?? "n/a")").font(.headline)
-                Text("Disponible : \(available)").font(.subheadline)
-            }
-            Spacer()
-            Stepper(
-                value: Binding<Int>(
-                    get: {
-                        if let index = chosenGames.firstIndex(where: { $0.depositGameId == depositGame.depositGameId }) {
-                            return chosenGames[index].quantity
-                        }
-                        return 0
-                    },
-                    set: { newValue in
-                        let clampedValue = min(newValue, available)
-                        
-                        if let index = chosenGames.firstIndex(where: { $0.depositGameId == depositGame.depositGameId }) {
-                            chosenGames[index].quantity = clampedValue
-                        } else if clampedValue > 0 {
-                            let newGame = ChosenSaleGame(
-                                id: ObjectIdentifier(UUID() as AnyObject),
-                                depositGameId: depositGame.depositGameId,
-                                quantity: clampedValue
-                            )
-                            chosenGames.append(newGame)
+        NavigationStack {
+            Form {
+                Section(header: Text("Sélectionnez les jeux à vendre")) {
+                    ForEach(depositGames, id: \.id) { dg in
+                        Button {
+                            selectedGameForDetails = dg
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(dg.game?.name ?? "Jeu inconnu").font(.headline)
+                                    Text("Disponible : \(dg.exemplaires?.count ?? 0)").font(.subheadline)
+                                }
+                                Spacer()
+                                Text("Quantité : \(chosenGames.first(where: { $0.depositGameId == dg.depositGameId })?.quantity ?? 0)")
+                                    .font(.subheadline)
+                            }
                         }
                     }
-                ),
-                in: 0...available
-            ) {
-                Text("Quantité: \(chosenGames.first(where: { $0.depositGameId == depositGame.depositGameId })?.quantity ?? 0)")
+                }
+
+                if let error = localError {
+                    Text(error).foregroundColor(.red)
+                }
+
+                HStack {
+                    Button("Retour") { onBack() }
+                    Spacer()
+                    Button("Étape Suivante") {
+                        if chosenGames.allSatisfy({ $0.quantity == 0 }) {
+                            localError = "Veuillez sélectionner au moins un exemplaire."
+                        } else {
+                            localError = nil
+                            onNext()
+                        }
+                    }
+                }
             }
+            .navigationDestination(item: $selectedGameForDetails) { depositGame in
+                ExemplaireSelectionView(
+                    depositGame: depositGame,
+                    chosenGames: $chosenGames
+                )
+            }
+            .navigationTitle("Étape 2")
         }
     }
 }
@@ -153,8 +127,7 @@ struct SaleStep3View: View {
     let selectedBuyer: Int?
     let saleDate: Date
     let saleStatus: String
-    let chosenGames: [ChosenSaleGame]
-    let depositGames: [DepositGame]
+    let localDetails: [LocalSaleDetail]
     let onConfirm: () -> Void
     let onBack: () -> Void
 
@@ -166,11 +139,19 @@ struct SaleStep3View: View {
                 Text("Date de vente: \(formattedDate(saleDate))")
                 Text("Statut: \(saleStatus)")
             }
-            
+
             Section(header: Text("Jeux sélectionnés")) {
-                gameListView()
+                ForEach(localDetails) { detail in
+                    SaleGameSummaryRow(localDetail: detail)
+                }
             }
-            
+
+            Section {
+                Text("Total : \(localDetails.reduce(0) { $0 + $1.subtotal }.formatted(.currency(code: "EUR")))")
+                    .font(.title3)
+                    .bold()
+            }
+
             HStack {
                 Button("Retour") { onBack() }
                 Spacer()
@@ -178,18 +159,6 @@ struct SaleStep3View: View {
             }
         }
         .navigationTitle("Étape 3")
-    }
-
-    private func gameListView() -> some View {
-        let gameMappings = chosenGames.compactMap { cg in
-            depositGames.first(where: { $0.depositGameId == cg.depositGameId }).map { dg in
-                (cg, dg)
-            }
-        }
-
-        return ForEach(gameMappings, id: \.0.id) { cg, dg in
-            SaleGameSummaryRow(chosenGame: cg, depositGame: dg)
-        }
     }
 
     private func formattedDate(_ date: Date) -> String {
@@ -200,14 +169,25 @@ struct SaleStep3View: View {
 }
 
 struct SaleGameSummaryRow: View {
-    let chosenGame: ChosenSaleGame
-    let depositGame: DepositGame
+    let localDetail: LocalSaleDetail
 
     var body: some View {
-        HStack {
-            Text("Jeu : \(depositGame.gameId)").font(.headline)
-            Spacer()
-            Text("Quantité: \(chosenGame.quantity)").font(.subheadline)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Jeu : \(localDetail.depositGame.game?.name ?? "Inconnu")")
+                .font(.headline)
+
+            ForEach(localDetail.selectedExemplaireKeys, id: \.self) { key in
+                if let ex = localDetail.depositGame.exemplaires?[key] {
+                    Text("- \(key) • \(ex.state ?? "État inconnu") • \(ex.price?.formatted() ?? "0€")")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+
+            Text("Sous-total : \(localDetail.subtotal.formatted(.currency(code: "EUR")))")
+                .font(.subheadline)
+                .bold()
+                .padding(.top, 4)
         }
     }
 }
@@ -219,6 +199,7 @@ struct AddSaleWizardView: View {
     @State private var saleDate: Date = Date()
     @State private var saleStatus: String = "en cours"
     @State private var chosenGames: [ChosenSaleGame] = []
+    @State private var localDetails: [LocalSaleDetail] = []
 
     var body: some View {
         NavigationView {
@@ -237,7 +218,10 @@ struct AddSaleWizardView: View {
                     SaleStep2View(
                         depositGames: availableDepositGames,
                         chosenGames: $chosenGames,
-                        onNext: { currentStep = 3 },
+                        onNext: {
+                            buildLocalDetails()
+                            currentStep = 3
+                        },
                         onBack: { currentStep = 1 }
                     )
                 } else if currentStep == 3 {
@@ -250,8 +234,7 @@ struct AddSaleWizardView: View {
                         selectedBuyer: selectedBuyer,
                         saleDate: saleDate,
                         saleStatus: saleStatus,
-                        chosenGames: chosenGames,
-                        depositGames: availableDepositGames,
+                        localDetails: localDetails,
                         onConfirm: { finalizeSale() },
                         onBack: { currentStep = 2 }
                     )
@@ -277,17 +260,17 @@ struct AddSaleWizardView: View {
                     sale_status: saleStatus
                 )
 
-                let createdSale = try await viewModel.createSale(saleToFinalize)
+                let createdSale =  await viewModel.createSale(saleToFinalize)
                 print("saleId \(createdSale?.saleId ?? 00)")
 
                 // Étape 2 : Créer les SaleDetails
-                for chosenGame in chosenGames {
+                for detail in localDetails {
                     let saleDetail = SaleDetailCreate(
                         sale_id: createdSale!.saleId,
-                        deposit_game_id: chosenGame.depositGameId,
-                        quantity: chosenGame.quantity
+                        deposit_game_id: detail.depositGame.depositGameId,
+                        quantity: detail.quantity // ← quantité réelle sélectionnée
                     )
-                    Task {await viewModel.createSaleDetail(saleDetail)}
+                    await viewModel.createSaleDetail(saleDetail)
                 }
 
                 // Étape 3 : Créer l'opération de vente (commission, statut)
@@ -298,12 +281,24 @@ struct AddSaleWizardView: View {
                     sale_status: saleStatus,
                     sale_date: formattedDate(saleDate)
                 )
-                try await viewModel.createSalesOperation(saleOperation)
+                 await viewModel.createSalesOperation(saleOperation)
 
                 print("Vente et détails créés avec succès !")
-            } catch {
-                print("Erreur lors de la finalisation de la vente : \(error)")
             }
+        }
+    }
+    private func buildLocalDetails() {
+        let availableDepositGames = viewModel.depositGamesForSale(
+            sellerId: selectedSeller,
+            sessionId: viewModel.activeSession?.sessionId
+        )
+
+        localDetails = chosenGames.compactMap { chosen in
+            guard let dg = availableDepositGames.first(where: { $0.depositGameId == chosen.depositGameId }) else {
+                return nil
+            }
+            let sortedKeys = chosen.selectedExemplaireKeys.sorted()
+            return LocalSaleDetail(depositGame: dg, selectedExemplaireKeys: sortedKeys)
         }
     }
     private func formattedDate(_ date: Date) -> String {

@@ -10,24 +10,42 @@ import SwiftUI
 
 struct SaleCardView: View {
     let sale: Sale
+    let localDetails: [LocalSaleDetail]?
     let seller: Seller?
     let onDelete: (Int) -> Void
     let onUpdate: (Sale) -> Void
     let onFinalize: (() -> Void)?
 
     var totalSale: Double {
-        sale.saleDetails?.reduce(0) { acc, detail in
+        if let localDetails {
+            return localDetails.reduce(0) { $0 + $1.subtotal }
+        }
+        return sale.saleDetails?.reduce(0) { acc, detail in
             guard let exemplaires = detail.depositGame?.exemplaires else { return acc }
-
             let sortedExemplaires = exemplaires.sorted { $0.key < $1.key }.map { $0.value }
-
             let soldExemplaires = sortedExemplaires.prefix(detail.quantity)
-
             let subTotal = soldExemplaires.reduce(0) { sum, ex in sum + (ex.price ?? 0) }
-
             return acc + subTotal
         } ?? 0
     }
+    
+    private var enrichedDetails: [LocalSaleDetail]? {
+        if let localDetails {
+            return localDetails
+        }
+
+        guard let saleDetails = sale.saleDetails else { return nil }
+
+        return saleDetails.compactMap { detail in
+            guard let dg = detail.depositGame else { return nil }
+
+            let sortedKeys = dg.exemplaires?.keys.sorted() ?? []
+            let selectedKeys = Array(sortedKeys.prefix(detail.quantity)).sorted()
+
+            return LocalSaleDetail(depositGame: dg, selectedExemplaireKeys: selectedKeys)
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -69,22 +87,40 @@ struct SaleCardView: View {
                     .font(.headline)
                     .padding(.top, 5)
 
-                if let details = sale.saleDetails, !details.isEmpty {
+                if let details = enrichedDetails {
                     List {
-                        ForEach(details, id: \.depositGame?.depositGameId) { detail in
-                            if let game = detail.depositGame?.game {
+                        ForEach(details) { local in
+                            VStack(alignment: .leading) {
+                                Text(local.depositGame.game?.name ?? "Jeu inconnu")
+                                    .font(.headline)
+
+                                ForEach(local.selectedExemplaireKeys, id: \.self) { key in
+                                    if let ex = local.depositGame.exemplaires?[key] {
+                                        HStack {
+                                            Text("• \(key)")
+                                                .font(.caption)
+                                            Spacer()
+                                            Text("\(ex.state ?? "État ?")")
+                                                .font(.caption)
+                                            Spacer()
+                                            Text(formatCurrency(ex.price ?? 0))
+                                                .font(.caption)
+                                        }
+                                        .foregroundColor(.gray)
+                                    }
+                                }
+
                                 HStack {
-                                    Text(game.name)
                                     Spacer()
-                                    Text("x\(detail.quantity)")
-                                        .bold()
-                                    Text(formatCurrency(detailSubtotal(detail)))
+                                    Text("Sous-total: \(formatCurrency(local.subtotal))")
+                                        .font(.subheadline)
                                         .bold()
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
                     }
-                    .frame(maxHeight: 150)
+                    .frame(maxHeight: 200)
                 } else {
                     Text("Aucun jeu vendu")
                         .font(.subheadline)
@@ -150,10 +186,27 @@ struct SaleCardView: View {
     private func handleDownloadInvoice() {
         print("📄 Téléchargement de la facture pour la vente #\(sale.saleId)")
         
-        if let data = PDFUtils.generateInvoicePdf(for: sale, seller: seller) {
-            PDFUtils.sharePdf(data)
+        if let data = PDFUtils.generateInvoicePdf(for: sale, seller: seller, localDetails: localDetails){
+            PDFUtils.sharePdf(data, "Facture_\(sale.saleId)")
         } else {
             print("Erreur lors de la génération du PDF")
+        }
+    }
+}
+
+struct LocalSaleDetail: Identifiable {
+    let id = UUID()
+    let depositGame: DepositGame
+    let selectedExemplaireKeys: [String]
+    
+    var quantity: Int {
+        selectedExemplaireKeys.count
+    }
+
+    var subtotal: Double {
+        selectedExemplaireKeys.reduce(0) { sum, key in
+            let price = depositGame.exemplaires?[key]?.price ?? 0
+            return sum + price
         }
     }
 }

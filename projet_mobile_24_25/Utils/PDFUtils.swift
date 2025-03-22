@@ -51,7 +51,7 @@ struct PDFUtils {
         
         return data
     }
-    static func generateInvoicePdf(for sale: Sale, seller: Seller?) -> Data? {
+    static func generateInvoicePdf(for sale: Sale, seller: Seller?, localDetails: [LocalSaleDetail]? = nil) -> Data? {
             let pdfMetaData = [
                 kCGPDFContextCreator: "Gestion Ventes",
                 kCGPDFContextAuthor: "Ton App",
@@ -76,7 +76,7 @@ struct PDFUtils {
                 }
 
                 draw("Facture de Vente", font: .boldSystemFont(ofSize: 22))
-                draw("Vente ID : \(sale.saleId ?? 0)")
+                draw("Vente ID : \(sale.saleId)")
                 draw("Date : \(formattedDate(sale.saleDate))")
                 draw("Vendeur : \(seller?.name ?? "Nom inconnu")")
                 draw("Statut : \(sale.saleStatus.rawValue.capitalized)")
@@ -85,14 +85,29 @@ struct PDFUtils {
 
                 var total: Double = 0
 
-                for detail in sale.saleDetails ?? [] {
-                    let name = detail.depositGame?.game?.name ?? "Jeu inconnu"
-                    let quantity = detail.quantity
-                    let exemplaires = detail.depositGame?.exemplaires ?? [:]
-                    let sold = exemplaires.values.prefix(quantity)
-                    let subtotal = sold.reduce(0.0) { $0 + ($1.price ?? 0.0) }
-                    total += subtotal
-                    draw("- \(name) x\(quantity) = \(String(format: "%.2f", subtotal)) €")
+                if let localDetails {
+                    for detail in localDetails {
+                        let gameName = detail.depositGame.game?.name ?? "Jeu inconnu"
+                        draw("- \(gameName)")
+
+                        for key in detail.selectedExemplaireKeys {
+                            if let ex = detail.depositGame.exemplaires?[key] {
+                                let prix = String(format: "%.2f", ex.price ?? 0)
+                                draw("    • \(key) - \(ex.state ?? "État inconnu") - \(prix) €", font: .systemFont(ofSize: 14))
+                                total += ex.price ?? 0
+                            }
+                        }
+                    }
+                } else {
+                    for detail in sale.saleDetails ?? [] {
+                        let name = detail.depositGame?.game?.name ?? "Jeu inconnu"
+                        let quantity = detail.quantity
+                        let exemplaires = detail.depositGame?.exemplaires ?? [:]
+                        let sold = exemplaires.values.prefix(quantity)
+                        let subtotal = sold.reduce(0.0) { $0 + ($1.price ?? 0.0) }
+                        total += subtotal
+                        draw("- \(name) x\(quantity) = \(String(format: "%.2f", subtotal)) €")
+                    }
                 }
 
                 y += 16
@@ -102,8 +117,8 @@ struct PDFUtils {
             return data
         }
     
-    static func sharePdf(_ data: Data) {
-        let tempUrl = FileManager.default.temporaryDirectory.appendingPathComponent("Depot.pdf")
+    static func sharePdf(_ data: Data, _ title : String) {
+        let tempUrl = FileManager.default.temporaryDirectory.appendingPathComponent("\(title).pdf")
         try? data.write(to: tempUrl)
         
         let activityVC = UIActivityViewController(activityItems: [tempUrl], applicationActivities: nil)
