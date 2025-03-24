@@ -13,63 +13,92 @@ struct GestionnaireFormView: View {
     var isEditing: Bool
     var existingGestionnaire: Gestionnaire?
     var onDismiss: () -> Void
-    
+
     @State private var username = ""
     @State private var email = ""
     @State private var password = ""
-    
+
     var body: some View {
         NavigationView {
-            VStack{
-                Section(header: Text("Informations")) {
-                    TextField("Nom d'utilisateur", text: $username)
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                    SecureField("Mot de passe", text: $password)
-                        .overlay(
-                            Group {
-                                if isEditing && password.isEmpty {
-                                    Text("Laisser vide pour ne pas changer")
-                                        .foregroundColor(.gray)
-                                        .padding(.leading, 5)
-                                        .offset(y: 2)
-                                }
-                            },
-                            alignment: .leading
-                        )
-                }
-                
-                Section {
-                    Button("Valider") {
-                        Task {
-                            if isEditing, let gestionnaire = existingGestionnaire {
-                                let partial = PartialGestionnaire(
-                                    username: username,
-                                    email: email,
-                                    password: password.isEmpty ? nil : password,
-                                    updatedAt: nil
-                                )
-                                await viewModel.updateGestionnaire(id: gestionnaire.id, data: partial)
-                            } else {
-                                let create = GestionnaireCreate(username: username, email: email, password: password,createdAt:"" , updatedAt: "")
-                                await viewModel.createGestionnaire(create)
+            ScrollView {
+                VStack(spacing: 24) {
+
+                    // ✏️ Informations utilisateur
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Informations")
+                            .font(.headline)
+
+                        TextField("Nom d'utilisateur", text: $username)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                        TextField("Email", text: $email)
+                            .keyboardType(.emailAddress)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                        ZStack(alignment: .leading) {
+                            if isEditing && password.isEmpty {
+                                Text("Laisser vide pour ne pas changer")
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 6)
                             }
-                            onDismiss()
+                            SecureField("Mot de passe", text: $password)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
                         }
-                        
+                    }
+
+                    Divider()
+
+                    // ✅ Boutons
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            Task {
+                                if isEditing, let gestionnaire = existingGestionnaire {
+                                    let partial = PartialGestionnaire(
+                                        username: username,
+                                        email: email,
+                                        password: password.isEmpty ? nil : password,
+                                        updatedAt: nil
+                                    )
+                                    await viewModel.updateGestionnaire(id: gestionnaire.id, data: partial)
+                                } else {
+                                    let now = ISO8601DateFormatter().string(from: Date())
+                                    let create = GestionnaireCreate(
+                                        username: username,
+                                        email: email,
+                                        password: password,
+                                        createdAt: now,
+                                        updatedAt: now
+                                    )
+                                    await viewModel.createGestionnaire(create)
+                                }
+                                onDismiss()
+                            }
+                        }) {
+                            Text(isEditing ? "Mettre à jour" : "Créer")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .disabled(username.isEmpty || email.isEmpty || (!isEditing && password.isEmpty))
+
                         Button("Annuler") {
                             onDismiss()
                         }
                         .foregroundColor(.red)
                     }
+
+                    Spacer()
                 }
-                .navigationTitle(isEditing ? "Modifier" : "Ajouter")
-                .onAppear {
-                    if let gestionnaire = existingGestionnaire {
-                        username = gestionnaire.username
-                        email = gestionnaire.email
-                        password = ""
-                    }
+                .padding()
+            }
+            .navigationTitle(isEditing ? "Modifier le gestionnaire" : "Ajouter un gestionnaire")
+            .onAppear {
+                if let gestionnaire = existingGestionnaire {
+                    username = gestionnaire.username
+                    email = gestionnaire.email
+                    password = ""
                 }
             }
         }

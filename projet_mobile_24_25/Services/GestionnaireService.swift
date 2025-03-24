@@ -10,10 +10,11 @@ import Foundation
 
 class GestionnaireService {
     static let shared = GestionnaireService()
-    private let api = APIService() // Assure-toi d’avoir une classe APIService générique.
+    private let api = APIService()
 
     // Récupérer tous les gestionnaires
     func getGestionnaires() async throws -> [Gestionnaire] {
+        print(" Appel getGestionnaires")
         return try await api.get("/gestionnaires")
     }
 

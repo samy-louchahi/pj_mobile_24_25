@@ -13,7 +13,7 @@ struct Gestionnaire: Codable, Identifiable {
     let id: Int
     let username: String
     let email: String
-    let password: String
+    let password: String?
     let createdAt: Date
     let updatedAt: Date
 

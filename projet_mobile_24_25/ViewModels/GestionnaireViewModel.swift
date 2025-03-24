@@ -15,11 +15,12 @@ class GestionnaireViewModel: ObservableObject {
     @Published var isLoading: Bool = false
 
     private let service = GestionnaireService.shared
-
+    
     func fetchGestionnaires() async {
         do {
             isLoading = true
             self.gestionnaires = try await service.getGestionnaires()
+            print("➡️ \(self.gestionnaires.count) gestionnaire(s) récupéré(s)")
         } catch {
             self.errorMessage = "Erreur de chargement : \(error.localizedDescription)"
         }

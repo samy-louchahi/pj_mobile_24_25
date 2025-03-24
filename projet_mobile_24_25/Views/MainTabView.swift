@@ -52,7 +52,7 @@ struct MainTabView: View {
                 }
             GestionnaireListView()
                 .tabItem{
-                    Image(systemName: "person.crop.circle.badge.shield.checkmark")
+                    Image(systemName: "person.fill")
                     Text("Gestionnaires")
             }
 
