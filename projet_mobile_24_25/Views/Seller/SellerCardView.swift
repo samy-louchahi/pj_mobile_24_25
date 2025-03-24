@@ -1,4 +1,3 @@
-//
 //  SellerCardView.swift
 //  projet_mobile_24_25
 //
@@ -12,11 +11,10 @@ struct SellerCardView: View {
     let seller: Seller
     let onUpdate: () -> Void
     let onDelete: () -> Void
-    let onSellerTapped: () -> Void
+    let onViewDetails: () -> Void 
 
     var body: some View {
         VStack(spacing: 12) {
-            // 👤 Nom du vendeur
             Text(seller.name ?? "Vendeur inconnu")
                 .font(.title2)
                 .bold()
@@ -29,31 +27,29 @@ struct SellerCardView: View {
             }
 
             HStack(spacing: 16) {
-                Button(action: onUpdate) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "pencil")
-                        Text("Modifier")
-                    }
+                Button(action: onViewDetails) {
+                    Label("Détails", systemImage: "person.crop.rectangle")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
                 }
                 .buttonStyle(BorderlessButtonStyle())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.blue.opacity(0.1))
+                .foregroundColor(.indigo)
+
+                Button(action: onUpdate) {
+                    Label("Modifier", systemImage: "pencil")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
+                }
+                .buttonStyle(BorderlessButtonStyle())
                 .foregroundColor(.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 Button(action: onDelete) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                        Text("Supprimer")
-                    }
+                    Label("Supprimer", systemImage: "trash")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
                 }
                 .buttonStyle(BorderlessButtonStyle())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.red.opacity(0.1))
                 .foregroundColor(.red)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .padding(.top, 6)
         }
@@ -63,9 +59,7 @@ struct SellerCardView: View {
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
         .padding(.horizontal)
-        .onTapGesture {
-            onSellerTapped()
-        }
+        
     }
 }
 

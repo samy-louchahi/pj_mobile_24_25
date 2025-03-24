@@ -10,6 +10,8 @@ import SwiftUI
 
 struct SellerListView: View {
     @StateObject private var viewModel = SellerViewModel()
+    @State private var showDetail: Bool = false
+    @State private var selectedSeller: Seller? = nil
 
     var body: some View {
         NavigationView {
@@ -45,8 +47,10 @@ struct SellerListView: View {
                                 seller: seller,
                                 onUpdate: { viewModel.openEditForm(seller) },
                                 onDelete: { Task {await viewModel.deleteSeller(seller)} },
-                                onSellerTapped: {
-                                }
+                                onViewDetails: {
+                                        self.selectedSeller = seller
+                                        self.showDetail = true
+                                    }
                             )
                         }
                     }
@@ -63,6 +67,12 @@ struct SellerListView: View {
             // Présente le formulaire comme une sheet
             .sheet(isPresented: $viewModel.showForm) {
                 SellerFormView(viewModel: viewModel)
+            }
+            
+            .sheet(isPresented: $showDetail) {
+                if let seller = selectedSeller {
+                    SellerDetailView(viewModel: SellerDetailViewModel(seller: seller))
+                }
             }
             .onAppear {
                 Task {await viewModel.fetchSellers()}
