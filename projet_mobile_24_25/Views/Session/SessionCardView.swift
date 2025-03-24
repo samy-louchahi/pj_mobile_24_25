@@ -11,63 +11,59 @@ import SwiftUI
 struct SessionCardView: View {
     let session: Session
 
-    /// Callbacks
     let onDelete: (Int) -> Void
     let onUpdate: (Session) -> Void
     let onViewDetails: (Session) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(session.name)
-                    .font(.headline)
+                    .font(.title3)
+                    .bold()
                 Spacer()
-                HStack {
+                HStack(spacing: 12) {
                     Button {
                         onUpdate(session)
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundColor(.blue)
                     }
+                    .buttonStyle(BorderlessButtonStyle())
+
                     Button {
                         onDelete(session.id)
                     } label: {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
                     }
+                    .buttonStyle(BorderlessButtonStyle())
                 }
             }
-            Text("Début : \(session.startDate)")
-                .font(.subheadline)
-            Text("Fin : \(session.endDate)")
-                .font(.subheadline)
-            Text("Frais de dépôt : \(session.fees, specifier: "%.2f") %")
-                .font(.subheadline)
-            Text("Commission : \(session.commission, specifier: "%.2f") %")
-                .font(.subheadline)
-            Text("Statut : \(session.status ? "Active" : "Inactive")")
-                .font(.subheadline)
-                .foregroundColor(session.status ? .green : .red)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Début : \(formatDate(session.startDate))")
+                Text("Fin : \(formatDate(session.endDate))")
+                Text("Frais de dépôt : \(session.fees, specifier: "%.2f") %")
+                Text("Commission : \(session.commission, specifier: "%.2f") %")
+                Text("Statut : \(session.status ? "Active" : "Inactive")")
+                    .foregroundColor(session.status ? .green : .red)
+            }
+            .font(.subheadline)
+            .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(8)
-        .shadow(radius: 2)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 3)
         .onTapGesture {
             onViewDetails(session)
         }
     }
 
-    private func formatDate(_ dateString: String) -> String {
-        // On parse la date "YYYY-MM-DD" ou autre
-        // Ex rapide :
-        let formatterIn = DateFormatter()
-        formatterIn.dateFormat = "yyyy-MM-dd"
-        if let date = formatterIn.date(from: dateString) {
-            let formatterOut = DateFormatter()
-            formatterOut.dateStyle = .medium
-            return formatterOut.string(from: date)
-        }
-        return dateString
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        return formatter.string(from: date)
     }
 }

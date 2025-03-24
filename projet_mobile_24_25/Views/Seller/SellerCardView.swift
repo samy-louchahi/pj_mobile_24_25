@@ -15,37 +15,57 @@ struct SellerCardView: View {
     let onSellerTapped: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(seller.name ?? "No Name")
-                .font(.headline)
-            Text("Email: \(seller.email ?? "")")
-            Text("Téléphone: \(seller.phone ?? "")")
-            
-            HStack {
-                Button(action: {
-                    // Empêche la propagation "tap" si tu veux
-                    onUpdate()
-                }) {
-                    Image(systemName: "pencil")
-                        .foregroundColor(.blue)
-                }
-                Spacer()
-                Button(action: {
-                    onDelete()
-                }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
+        VStack(spacing: 12) {
+            // 👤 Nom du vendeur
+            Text(seller.name ?? "Vendeur inconnu")
+                .font(.title2)
+                .bold()
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+
+            VStack(alignment: .leading, spacing: 6) {
+                InfoRow(label: "Email", value: seller.email ?? "Non renseigné")
+                InfoRow(label: "Téléphone", value: seller.phone?.isEmpty == false ? seller.phone! : "Non renseigné")
             }
-            .padding(.top, 4)
+
+            HStack(spacing: 16) {
+                Button(action: onUpdate) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                        Text("Modifier")
+                    }
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.blue.opacity(0.1))
+                .foregroundColor(.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                Button(action: onDelete) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash")
+                        Text("Supprimer")
+                    }
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.red.opacity(0.1))
+                .foregroundColor(.red)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .padding(.top, 6)
         }
         .padding()
-        .background(Color.white)
-        .cornerRadius(8)
-        .shadow(radius: 2)
+        .frame(maxWidth: .infinity)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .padding(.horizontal)
         .onTapGesture {
-            // Si tu veux naviguer vers le détail
             onSellerTapped()
         }
     }
 }
+
