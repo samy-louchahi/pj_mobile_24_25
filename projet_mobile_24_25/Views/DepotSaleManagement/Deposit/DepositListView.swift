@@ -52,7 +52,6 @@ struct DepositListView: View {
                     .listStyle(PlainListStyle())
                 }
             }
-            .navigationTitle("Gestion des Dépôts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showAddDeposit = true }) {

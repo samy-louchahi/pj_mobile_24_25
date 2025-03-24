@@ -10,12 +10,21 @@ import SwiftUI
 
 struct StatisticsTabView: View {
     @StateObject private var sessionVM = SessionViewModel()
-    
+
     var body: some View {
-        if sessionVM.sessions.isEmpty {
-            ProgressView("Chargement des sessions…")
-        } else {
-            StatisticsDashboardView(sessions: sessionVM.sessions)
+        Group {
+            if sessionVM.sessions.isEmpty && sessionVM.loading {
+                ProgressView("Chargement des sessions…")
+            } else {
+                StatisticsDashboardView(sessions: sessionVM.sessions)
+            }
+        }
+        .onAppear {
+            if sessionVM.sessions.isEmpty {
+                Task {
+                    await sessionVM.fetchSessions()
+                }
+            }
         }
     }
 }

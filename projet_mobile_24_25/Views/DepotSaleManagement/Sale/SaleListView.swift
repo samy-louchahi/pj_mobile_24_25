@@ -20,14 +20,7 @@ struct SaleListView: View {
     var body: some View {
         NavigationView{
             VStack {
-                Text("Liste des Ventes")
-                    .font(.title)
-                    .bold()
-                    .padding()
-                
-                // Filtres
                 HStack {
-                    // Sélecteur de Session
                     Picker("Session", selection: $selectedSession) {
                         Text("Toutes").tag(nil as Int?)
                         ForEach(viewModel.sessions) { session in
@@ -57,51 +50,56 @@ struct SaleListView: View {
                 .padding(.horizontal)
                 
                 // Liste des ventes
-                List(filteredSales, id: \.id) { sale in
-                    let localDetails: [LocalSaleDetail]? = sale.saleDetails?.compactMap { detail in
-                        guard let depositGame = detail.depositGame else { return nil }
-                        let selectedKeys = detail.selectedKeys ?? []
-                        return LocalSaleDetail(depositGame: depositGame, selectedExemplaireKeys: selectedKeys)
-                    }
-
-                    SaleCardView(
-                        sale: sale,
-                        localDetails: localDetails,
-                        seller: sale.saleDetails?.isEmpty ?? true
-                            ? nil
-                            : viewModel.sellers.first(where: { $0.id == sale.saleDetails!.first!.sellerId }),
-                        onDelete: { id in
-                            Task { await viewModel.deleteSale(id: id) }
-                        },
-                        onUpdate: { _ in
-                            selectedSale = sale
-                            showUpdateSale = true
-                        },
-                        onFinalize: {
-                            Task {
-                                await viewModel.updateSale(
-                                    id: sale.id,
-                                    saleData: PartialSale(
-                                        buyer_id: nil,
-                                        session_id: nil,
-                                        sale_date: nil,
-                                        sale_status: SalesOpStatus.finalise.rawValue
-                                    )
-                                )
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        ForEach(filteredSales, id: \.id) { sale in
+                            let localDetails: [LocalSaleDetail]? = sale.saleDetails?.compactMap { detail in
+                                guard let depositGame = detail.depositGame else { return nil }
+                                let selectedKeys = detail.selectedKeys ?? []
+                                return LocalSaleDetail(depositGame: depositGame, selectedExemplaireKeys: selectedKeys)
                             }
+
+                            SaleCardView(
+                                sale: sale,
+                                localDetails: localDetails,
+                                seller: sale.saleDetails?.isEmpty ?? true
+                                    ? nil
+                                    : viewModel.sellers.first(where: { $0.id == sale.saleDetails!.first!.sellerId }),
+                                onDelete: { id in
+                                    Task { await viewModel.deleteSale(id: id) }
+                                },
+                                onUpdate: { _ in
+                                    selectedSale = sale
+                                    showUpdateSale = true
+                                },
+                                onFinalize: {
+                                    Task {
+                                        await viewModel.updateSale(
+                                            id: sale.id,
+                                            saleData: PartialSale(
+                                                buyer_id: nil,
+                                                session_id: nil,
+                                                sale_date: nil,
+                                                sale_status: SalesOpStatus.finalise.rawValue
+                                            )
+                                        )
+                                    }
+                                }
+                            )
+                            .padding(.horizontal)
                         }
-                    )
+                    }
+                    .padding(.top)
                 }
+                .background(Color(.systemGroupedBackground))
                 
                 Button(action: { showAddSale = true }) {
-                    Text("+ Nouvelle Vente")
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                    Label("Nouvelle Vente", systemImage: "plus")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
                 }
-                .padding()
+                .buttonStyle(BorderlessButtonStyle())
+                .padding(.bottom)
             }
             .sheet(isPresented: $showAddSale) {
                 AddSaleWizardView(viewModel: viewModel)

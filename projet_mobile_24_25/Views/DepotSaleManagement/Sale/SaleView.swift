@@ -14,11 +14,6 @@ struct SaleView: View {
     
     var body: some View {
         VStack {
-            Text("Gestion des Ventes")
-                .font(.largeTitle)
-                .bold()
-                .padding()
-            
              if viewModel.sales.isEmpty {
                 VStack {
                     Image(systemName: "bag.fill")

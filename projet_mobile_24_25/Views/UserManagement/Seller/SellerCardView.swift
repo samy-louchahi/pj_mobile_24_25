@@ -55,9 +55,10 @@ struct SellerCardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.secondarySystemBackground))
+        )
         .padding(.horizontal)
         
     }

@@ -13,28 +13,30 @@ struct GameDetailView: View {
 
     var body: some View {
         NavigationView {
-            // Au lieu de tout coder ici, on appelle une sous-fonction "content"
-            content
-                .navigationTitle("Détails: \(game.name)")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Fermer") {
-                            viewModel.closeDetail()
+            ZStack {
+                Color(.systemGroupedBackground).ignoresSafeArea()
+
+                content
+                    .navigationTitle("Détails")
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Fermer") {
+                                viewModel.closeDetail()
+                            }
                         }
                     }
-                }
+            }
         }
         .onAppear {
-            // Appel de la méthode du VM pour fetch
-            Task {await viewModel.fetchStocksForDetail(game: game)}
+            Task { await viewModel.fetchStocksForDetail(game: game) }
         }
     }
 
-    /// Vue séparée pour le contenu (ce qui était dans le ScrollView)
     @ViewBuilder
     private var content: some View {
         if viewModel.detailLoading {
-            ProgressView("Chargement...")
+            ProgressView("Chargement…")
+                .padding()
         } else if let err = viewModel.detailError {
             Text(err)
                 .foregroundColor(.red)
@@ -44,34 +46,65 @@ struct GameDetailView: View {
         }
     }
 
-    /// Un autre sous-bloc pour le ScrollView
     private var detailScrollView: some View {
         ScrollView {
-            AsyncImage(url: URL(string: game.picture)) { image in
-                image.resizable()
-            } placeholder: {
-                Rectangle().foregroundColor(.gray)
+            VStack(spacing: 20) {
+                AsyncImage(url: URL(string: game.picture)) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Rectangle().foregroundColor(.gray)
+                }
+                .frame(height: 220)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 5)
+                .padding(.horizontal)
+
+                VStack(spacing: 8) {
+                    Text(game.name)
+                        .font(.title)
+                        .bold()
+                        .multilineTextAlignment(.center)
+
+                    Text("Éditeur : \(game.publisher)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                if !game.description.isEmpty {
+                    GroupBox(label: Text("📖 Description")) {
+                        Text(game.description)
+                            .padding(.vertical, 4)
+                    }
+                }
+
+                GroupBox(label: Text("📦 Stock")) {
+                    let totalInitial = viewModel.detailStocks.reduce(0) { $0 + $1.initialQuantity }
+                    let totalCurrent = viewModel.detailStocks.reduce(0) { $0 + $1.currentQuantity }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Quantité Déposé Totale")
+                            Spacer()
+                            Text("\(totalInitial)")
+                        }
+
+                        HStack {
+                            Text("Quantité Restante Totale")
+                            Spacer()
+                            Text("\(totalCurrent)")
+                        }
+                    }
+                    .font(.body)
+                    .padding(.vertical, 4)
+                }
+
+                Spacer()
             }
-            .frame(height: 200)
-
-            Text(game.name)
-                .font(.title)
-                .padding(.top, 8)
-            Text("Éditeur: \(game.publisher)")
-                .foregroundColor(.secondary)
-
-            Text("Description : \(game.description)")
-
-            let totalInitial = viewModel.detailStocks.reduce(0) { $0 + $1.initialQuantity }
-            let totalCurrent = viewModel.detailStocks.reduce(0) { $0 + $1.currentQuantity }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Quantité Initiale Totale: \(totalInitial)")
-                Text("Quantité Actuelle Totale: \(totalCurrent)")
-            }
-            .padding(.top, 8)
-
+            .padding()
         }
-        .padding()
     }
 }

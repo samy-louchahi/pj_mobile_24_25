@@ -14,54 +14,49 @@ struct BuyerCardView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             // 🧑‍💼 Nom
             Text(buyer.name)
                 .font(.title2)
-                .bold()
-                .foregroundColor(.primary)
+                .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(spacing: 8) {
                 InfoRow(label: "Email", value: buyer.email)
                 InfoRow(label: "Téléphone", value: buyer.phone ?? "Non renseigné")
-                InfoRow(label: "Adresse", value: (buyer.address?.isEmpty == false ? buyer.address! : "Non renseignée"))
+                InfoRow(label: "Adresse", value: buyer.address?.isEmpty == false ? buyer.address! : "Non renseignée")
             }
+
+            Divider()
 
             HStack(spacing: 16) {
                 Button(action: onUpdate) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "pencil")
-                        Text("Modifier")
-                    }
+                    Label("Modifier", systemImage: "pencil")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.blue.opacity(0.1))
-                .foregroundColor(.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
                 .buttonStyle(BorderlessButtonStyle())
+                .foregroundColor(.blue)
 
                 Button(action: onDelete) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                        Text("Supprimer")
-                    }
+                    Label("Supprimer", systemImage: "trash")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.red.opacity(0.1))
-                .foregroundColor(.red)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
                 .buttonStyle(BorderlessButtonStyle())
+                .foregroundColor(.red)
             }
             .padding(.top, 6)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
         .padding(.horizontal)
     }
 }
@@ -71,7 +66,7 @@ struct InfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(alignment: .top) {
+        HStack {
             Text("\(label) :")
                 .fontWeight(.semibold)
                 .foregroundColor(.gray)

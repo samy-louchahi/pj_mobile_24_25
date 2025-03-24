@@ -10,59 +10,74 @@ import SwiftUI
 
 struct GameListView: View {
     @StateObject private var viewModel = GameViewModel()
-
-    // Pour CSV import
     @State private var showFileImporter = false
+
+    let gridLayout = [GridItem(.adaptive(minimum: 170), spacing: 24)]
 
     var body: some View {
         NavigationView {
-            VStack {
-                if viewModel.loading {
-                    ProgressView("Chargement des jeux...")
-                } else if let err = viewModel.errorMessage {
-                    Text(err).foregroundColor(.red)
-                } else if viewModel.filteredGames.isEmpty {
-                    // Équivalent “aucun jeu”
-                    VStack(spacing: 12) {
-                        Text("Aucun jeu disponible")
-                            .font(.title2)
-                        Text("Ajoutez vos jeux ou importez un CSV.")
-                            .foregroundColor(.gray)
-                        HStack(spacing: 10) {
-                            Button("+ Créer un nouveau jeu") {
-                                viewModel.openAddForm()
-                            }
-                            Button("+ Importer CSV") {
-                                showFileImporter = true
-                            }
-                        }
-                    }
-                } else {
-                    // Barre de recherche
-                    HStack(spacing: 8) {
-                        TextField("Recherche par éditeur", text: $viewModel.searchPublisher)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Toggle("Avec stock", isOn: $viewModel.filterHasStock)
-                    }
-                    .padding()
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
 
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)]) {
-                            ForEach(viewModel.filteredGames) { game in
-                                GameCardView(
-                                    game: game,
-                                    onUpdate: { viewModel.openEditForm(game) },
-                                    onDelete: { Task {await viewModel.deleteGame(game)} },
-                                    onViewDetails: { viewModel.openDetail(game) }
-                                )
-                                .frame(height: 200)
+                VStack {
+                    if viewModel.loading {
+                        ProgressView("Chargement des jeux...")
+                            .padding()
+                    } else if let err = viewModel.errorMessage {
+                        Text(err)
+                            .foregroundColor(.red)
+                            .padding()
+                    } else if viewModel.filteredGames.isEmpty {
+                        VStack(spacing: 12) {
+                            Text("Aucun jeu disponible")
+                                .font(.title2)
+                                .bold()
+                            Text("Ajoutez vos jeux ou importez un CSV.")
+                                .foregroundColor(.gray)
+                            HStack(spacing: 10) {
+                                Button("+ Créer un nouveau jeu") {
+                                    viewModel.openAddForm()
+                                }
+                                .buttonStyle(.borderedProminent)
+
+                                Button("+ Importer CSV") {
+                                    showFileImporter = true
+                                }
+                                .buttonStyle(.bordered)
                             }
                         }
                         .padding()
+                    } else {
+                        // 🔍 Recherche
+                        VStack(spacing: 8) {
+                            HStack(spacing: 12) {
+                                TextField("Recherche par éditeur", text: $viewModel.searchPublisher)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                Toggle("Avec stock", isOn: $viewModel.filterHasStock)
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // 🧩 Grille de jeux
+                        ScrollView {
+                            LazyVGrid(columns: gridLayout, spacing: 24) {
+                                ForEach(viewModel.filteredGames) { game in
+                                    GameCardView(
+                                        game: game,
+                                        onUpdate: { viewModel.openEditForm(game) },
+                                        onDelete: { Task { await viewModel.deleteGame(game) } },
+                                        onViewDetails: { viewModel.openDetail(game) }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom)
+                        }
                     }
                 }
             }
-            .navigationTitle("Liste des Jeux")
+            .navigationTitle("Catalogue de Jeux")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -90,9 +105,8 @@ struct GameListView: View {
                 }
             }
             .onAppear {
-                Task {await viewModel.fetchGames()}
+                Task { await viewModel.fetchGames() }
             }
-            // FileImporter iOS 14+
             .fileImporter(
                 isPresented: $showFileImporter,
                 allowedContentTypes: [.commaSeparatedText, .plainText],
@@ -103,7 +117,7 @@ struct GameListView: View {
                     guard let csvURL = urls.first else { return }
                     do {
                         let data = try Data(contentsOf: csvURL)
-                        Task {await viewModel.importCSV(data, fileName: csvURL.lastPathComponent)}
+                        Task { await viewModel.importCSV(data, fileName: csvURL.lastPathComponent) }
                     } catch {
                         print("Erreur lecture du CSV: \(error)")
                     }
@@ -113,8 +127,4 @@ struct GameListView: View {
             }
         }
     }
-}
-
-#Preview {
-    GameListView()
 }

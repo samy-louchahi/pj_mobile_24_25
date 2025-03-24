@@ -15,6 +15,7 @@ struct ContentView: View {
             if authViewModel.isLoggedIn {
                 MainTabView()
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .environmentObject(authViewModel)
             } else {
                 LoginView()
                     .transition(.move(edge: .leading).combined(with: .opacity))

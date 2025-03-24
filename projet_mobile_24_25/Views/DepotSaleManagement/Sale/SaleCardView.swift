@@ -5,7 +5,6 @@
 //  Created by Samy Louchahi on 19/03/2025.
 //
 
-
 import SwiftUI
 
 struct SaleCardView: View {
@@ -37,38 +36,47 @@ struct SaleCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .center, spacing: 16) {
+            // 🔖 En-tête
             HStack {
                 Text("Vente #\(sale.saleId)")
                     .font(.title3)
                     .bold()
                 Spacer()
-                Button(action: { onUpdate(sale) }) {
-                    Image(systemName: "pencil")
+                HStack(spacing: 12) {
+                    Button(action: { onUpdate(sale) }) {
+                        Label("Modifier", systemImage: "pencil")
+                            .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+
+                    Button(action: { onDelete(sale.saleId) }) {
+                        Label("Supprimer", systemImage: "trash")
+                            .labelStyle(.iconOnly)
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
                 }
-                .buttonStyle(BorderlessButtonStyle())
-                
-                Button(action: { onDelete(sale.saleId) }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(BorderlessButtonStyle())
             }
 
-            Text("Statut: \(sale.saleStatus.rawValue)")
-                .font(.subheadline)
-                .foregroundColor(.blue)
+            // ℹ️ Infos principales
+            VStack(alignment: .leading, spacing: 6) {
+                Text("🟢 Statut : \(sale.saleStatus.rawValue)")
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
 
-            Text("Vendeur: \(seller?.name ?? "N/A")")
-                .font(.subheadline)
+                Text("👤 Vendeur : \(seller?.name ?? "N/A")")
+                    .font(.subheadline)
 
-            Text("Date: \(formattedDate(sale.saleDate))")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                Text("📅 Date : \(formattedDate(sale.saleDate))")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider()
 
-            // ▶️ Bouton de détails
+            // ⬇️ Bouton toggle détails
             Button(action: {
                 withAnimation {
                     showDetails.toggle()
@@ -76,22 +84,22 @@ struct SaleCardView: View {
             }) {
                 Label(showDetails ? "Masquer les jeux" : "Afficher les jeux vendus", systemImage: showDetails ? "chevron.up" : "chevron.down")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
             }
             .buttonStyle(BorderlessButtonStyle())
+            .foregroundColor(.gray)
 
-            // 🧾 Détails vendus
+            // 📦 Liste des jeux
             if showDetails, let details = enrichedDetails {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(details) { local in
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text(local.depositGame.game?.name ?? "Jeu inconnu")
                                 .font(.headline)
 
                             ForEach(local.selectedExemplaireKeys, id: \.self) { key in
                                 if let ex = local.depositGame.exemplaires?[key] {
                                     HStack {
-                                        Text("• État : \(ex.state ?? "N/A")")
+                                        Text("• \(ex.state ?? "État inconnu")")
                                         Spacer()
                                         Text("\(formatCurrency(ex.price ?? 0))")
                                     }
@@ -102,50 +110,50 @@ struct SaleCardView: View {
 
                             HStack {
                                 Spacer()
-                                Text("Sous-total: \(formatCurrency(local.subtotal))")
+                                Text("Sous-total : \(formatCurrency(local.subtotal))")
                                     .font(.subheadline)
                                     .bold()
                             }
                         }
-                        .padding(8)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .cornerRadius(8)
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(10)
                     }
                 }
             }
 
-            // 🧮 Total
-            Text("Total: \(formatCurrency(totalSale))")
+            // 💰 Total
+            Text("💶 Total : \(formatCurrency(totalSale))")
                 .font(.title3)
                 .bold()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            // 🔴 Finalisation
+            // 🔴 Finaliser (si applicable)
             if sale.saleStatus.rawValue == "en cours", let onFinalize = onFinalize {
-                Button("Finaliser la vente") {
+                Button(action: {
                     onFinalize()
+                }) {
+                    Label("Finaliser la vente", systemImage: "checkmark.seal.fill")
+                        .font(.subheadline)
+                        .foregroundColor(.red)
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.red)
-                .foregroundColor(.white)
-                .cornerRadius(10)
+                .buttonStyle(BorderlessButtonStyle())
             }
 
-            // 📄 PDF
-            Button("Télécharger la facture") {
+            // 📄 Générer PDF
+            Button(action: {
                 handleDownloadInvoice()
+            }) {
+                Label("Télécharger la facture", systemImage: "doc.richtext")
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
             .buttonStyle(BorderlessButtonStyle())
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(radius: 4)
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
 
     private func formattedDate(_ date: Date) -> String {
@@ -167,7 +175,6 @@ struct SaleCardView: View {
         }
     }
 }
-
 struct LocalSaleDetail: Identifiable {
     let id = UUID()
     let depositGame: DepositGame
