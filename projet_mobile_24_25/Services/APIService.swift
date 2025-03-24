@@ -16,6 +16,7 @@ enum APIError: Error {
     case networkError(Error)
     case unexpectedStatusCode(Int)
     case unknown
+    case invalidResponse
 }
 
 /// Service pour gérer les appels REST à l'API
@@ -30,23 +31,60 @@ class APIService {
 
     // MARK: - GET (Async)
     func get<T: Decodable>(_ endpoint: String) async throws -> T {
+        // 🔗 Construction de l’URL
         guard let url = URL(string: baseURL + endpoint) else {
-            print("invalid url")
+            print("❌ URL invalide : \(baseURL + endpoint)")
             throw APIError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
+        // 🪪 Authentification
         if let token = getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("🔐 Token utilisé : \(token.prefix(10))...") // pour éviter d’afficher tout le token
+        } else {
+            print("⚠️ Aucun token trouvé")
         }
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        try validateResponse(response)
-        
-        return try decodeJSON(data)
+
+        print("📡 Envoi requête GET → \(request.url!.absoluteString)")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            // ✅ Vérification HTTP
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Réponse invalide (non HTTP)")
+                throw APIError.invalidResponse
+            }
+
+            print("✅ Code HTTP : \(httpResponse.statusCode)")
+
+            if !(200...299).contains(httpResponse.statusCode) {
+                print("❌ Erreur HTTP : \(httpResponse.statusCode)")
+                print("📦 Réponse brute : \(String(data: data, encoding: .utf8) ?? "aucune donnée")")
+                throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+            }
+
+            try validateResponse(response)
+
+            // 🧠 Décodage
+            do {
+                let decoded = try decodeJSON(data) as T
+                print("✅ Décodage réussi : \(T.self)")
+                return decoded
+            } catch {
+                print("❌ Erreur de décodage JSON : \(error.localizedDescription)")
+                print("📦 JSON brut : \(String(data: data, encoding: .utf8) ?? "aucune donnée")")
+                throw error
+            }
+
+        } catch {
+            print("🔥 Erreur lors de la requête : \(error.localizedDescription)")
+            throw error
+        }
     }
 
     // MARK: - POST (Async)

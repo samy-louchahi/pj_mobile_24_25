@@ -55,7 +55,11 @@ struct MainTabView: View {
                     Image(systemName: "person.fill")
                     Text("Gestionnaires")
             }
-
+            StatisticsTabView()
+                .tabItem {
+                    Image(systemName: "chart.bar.fill")
+                    Text("Stats")
+                }
             SettingsView() // 👉 on ajoute une tab pour la déconnexion
                 .tabItem {
                     Image(systemName: "gear")
