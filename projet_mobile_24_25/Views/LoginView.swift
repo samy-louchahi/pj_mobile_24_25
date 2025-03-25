@@ -56,21 +56,27 @@ struct LoginView: View {
             }
             .padding(.horizontal)
 
-            Button {
-                Task { await authviewModel.login() }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.right")
-                    Text("Se connecter")
-                        .fontWeight(.medium)
+            if authviewModel.isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .padding()
+            } else {
+                Button {
+                    Task { await authviewModel.login() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.right")
+                        Text("Se connecter")
+                            .fontWeight(.medium)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .foregroundColor(.blue)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.blue, lineWidth: 1)
+                    )
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .foregroundColor(.blue)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.blue, lineWidth: 1)
-                )
             }
             Spacer()
         }
