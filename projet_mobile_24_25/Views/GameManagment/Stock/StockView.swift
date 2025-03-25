@@ -16,11 +16,6 @@ struct StockView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Text("Gestion des Stocks")
-                    .font(.title)
-                    .bold()
-                    .padding(.top)
-                
                 if !viewModel.sessions.isEmpty {
                     Picker("Choisir une session", selection: Binding(
                         get: { viewModel.selectedSession },
@@ -68,9 +63,9 @@ struct StockView: View {
                     }
                 }
             }
-            .navigationTitle("Stocks")
         }
         .onAppear { Task {await viewModel.fetchSessions()} }
+        .background(Color(UIColor.secondarySystemBackground))
     }
     
     private func formattedDate(_ date: Date) -> String {

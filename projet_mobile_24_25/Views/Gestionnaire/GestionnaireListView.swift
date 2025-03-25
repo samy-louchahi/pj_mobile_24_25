@@ -17,7 +17,6 @@
         var body: some View {
             NavigationView {
                 VStack {
-                    Text("Nombre de gestionnaires : \(viewModel.gestionnaires.count)")
                     HStack {
                         Text("Gestion des gestionnaires")
                             .font(.largeTitle)
@@ -34,7 +33,6 @@
                     .padding()
 
                     List {
-                        Text("Débogage - liste affichée")
                         ForEach(viewModel.gestionnaires) { gestionnaire in
                             VStack(alignment: .leading) {
                                 HStack {

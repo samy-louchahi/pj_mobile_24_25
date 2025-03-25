@@ -14,7 +14,6 @@ class GestionnaireService {
 
     // Récupérer tous les gestionnaires
     func getGestionnaires() async throws -> [Gestionnaire] {
-        print(" Appel getGestionnaires")
         return try await api.get("/gestionnaires")
     }
 

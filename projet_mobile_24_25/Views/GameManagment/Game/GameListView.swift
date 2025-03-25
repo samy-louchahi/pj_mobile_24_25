@@ -49,17 +49,21 @@ struct GameListView: View {
                         }
                         .padding()
                     } else {
-                        // 🔍 Recherche
                         VStack(spacing: 8) {
                             HStack(spacing: 12) {
-                                TextField("Recherche par éditeur", text: $viewModel.searchPublisher)
+                                TextField("Recherche par Nom", text: $viewModel.searchName)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                 Toggle("Avec stock", isOn: $viewModel.filterHasStock)
                             }
                             .padding(.horizontal)
+                            .onChange(of: viewModel.searchName) { _ in
+                                viewModel.applyFilter()
+                            }
+                            .onChange(of: viewModel.filterHasStock) { _ in
+                                viewModel.applyFilter()
+                            }
                         }
 
-                        // 🧩 Grille de jeux
                         ScrollView {
                             LazyVGrid(columns: gridLayout, spacing: 24) {
                                 ForEach(viewModel.filteredGames) { game in
@@ -77,7 +81,6 @@ struct GameListView: View {
                     }
                 }
             }
-            .navigationTitle("Catalogue de Jeux")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {

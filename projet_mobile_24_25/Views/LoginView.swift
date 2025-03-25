@@ -12,28 +12,27 @@ struct LoginView: View {
     @EnvironmentObject var authviewModel: AuthViewModel
 
     var body: some View {
-        VStack {
-            Text("Gestion des dépôts et ventes de jeux")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.top, 32)
+        VStack(spacing: 24) {
+            Spacer()
 
-            Image(systemName: "gamecontroller.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 60, height: 60)
-                .foregroundColor(.blue)
-                .padding(.vertical, 8)
+            VStack(spacing: 8) {
+                Image(systemName: "dice.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
+                    .foregroundColor(.blue)
 
-            Text("Connexion")
-                .font(.title)
-                .fontWeight(.semibold)
-                .padding(.bottom, 16)
+                Text("Connexion à l’espace gestion")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+            }
 
             if let error = authviewModel.errorMessage {
                 Text(error)
                     .foregroundColor(.red)
-                    .padding()
+                    .font(.subheadline)
+                    .padding(.horizontal)
             }
 
             Picker("Rôle", selection: $authviewModel.role) {
@@ -41,49 +40,52 @@ struct LoginView: View {
                 Text("Gestionnaire").tag(UserRole.gestionnaire)
             }
             .pickerStyle(SegmentedPickerStyle())
-            .padding()
+            .padding(.horizontal)
 
-            if authviewModel.role == .admin {
-                TextField("Email", text: $authviewModel.email)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled(true)
-                    .textInputAutocapitalization(.none)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-            } else {
-                TextField("Nom d'utilisateur", text: $authviewModel.username)
-                    .autocorrectionDisabled(true)
-                    .textInputAutocapitalization(.none)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-            }
-
-            SecureField("Mot de passe", text: $authviewModel.password)
-                .padding()
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(8)
-
-            Button(action: {
-                Task { await authviewModel.login() }
-            }) {
-                if authviewModel.isLoading {
-                    ProgressView()
+            VStack(spacing: 16) {
+                if authviewModel.role == .admin {
+                    TextField("Email", text: $authviewModel.email)
+                        .textFieldStyle(LoginFieldStyle())
                 } else {
-                    Text("Se connecter")
-                        .fontWeight(.semibold)
+                    TextField("Nom d'utilisateur", text: $authviewModel.username)
+                        .textFieldStyle(LoginFieldStyle())
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .padding(.vertical)
 
+                SecureField("Mot de passe", text: $authviewModel.password)
+                    .textFieldStyle(LoginFieldStyle())
+            }
+            .padding(.horizontal)
+
+            Button {
+                Task { await authviewModel.login() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.right")
+                    Text("Se connecter")
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .foregroundColor(.blue)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.blue, lineWidth: 1)
+                )
+            }
             Spacer()
         }
         .padding()
+        .ignoresSafeArea()
+    }
+}
+
+struct LoginFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<_Label>) -> some View {
+        configuration
+            .padding(12)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .disableAutocorrection(true)
+            .textInputAutocapitalization(.never)
     }
 }

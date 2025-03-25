@@ -24,6 +24,7 @@ class AuthViewModel: ObservableObject {
     @Published var isLoggedIn: Bool = false
     @Published var errorMessage: String? = nil
     @Published var isLoading: Bool = false
+    @Published var gestionnaireId: Int? = nil
 
     // MARK: - Services
     private let apiService = APIService()
@@ -124,18 +125,45 @@ class AuthViewModel: ObservableObject {
             return false
         }
     private func validateToken(_ token: String) async {
-            do {
-                let response: TokenValidationResponse = try await apiService.get("/auth/validate-token")
-                
-                if response.isValid {
-                    isLoggedIn = true
-                } else {
-                    await logout()
-                }
-            } catch {
+        do {
+            let response: TokenValidationResponse = try await apiService.get("/auth/validate-token")
+
+            if response.isValid {
+                self.gestionnaireId = extractUserId(from: token)
+                isLoggedIn = true
+            } else {
                 await logout()
             }
+        } catch {
+            await logout()
         }
+    }
+
+    private func extractUserId(from token: String) -> Int? {
+        let parts = token.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+
+        var payload = parts[1]
+        
+        // Ajuster le padding base64 si nécessaire
+        let remainder = payload.count % 4
+        if remainder > 0 {
+            payload += String(repeating: "=", count: 4 - remainder)
+        }
+
+        guard let decodedData = Data(base64Encoded: String(payload)) else { return nil }
+
+        do {
+            if let json = try JSONSerialization.jsonObject(with: decodedData, options: []) as? [String: Any],
+               let id = json["id"] as? Int {
+                return id
+            }
+        } catch {
+            return nil
+        }
+
+        return nil
+    }
 
 
     

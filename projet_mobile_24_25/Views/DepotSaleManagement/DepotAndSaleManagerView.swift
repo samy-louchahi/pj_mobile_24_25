@@ -28,6 +28,6 @@ struct DepotAndSaleManagerView: View {
                 }
             }
             .navigationTitle("Dépôts & Ventes")
-        }
+        }.background(Color(UIColor.secondarySystemBackground))
     }
 }

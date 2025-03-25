@@ -28,6 +28,13 @@ struct SessionAddView: View {
     @State private var commission: Double = 0
 
     @State private var errorMessage: String?
+    var activeSession: Session? {
+        viewModel.sessions.first(where: { $0.status })
+    }
+    
+    func datesChevauchent(_ start1: Date, _ end1: Date, _ start2: Date, _ end2: Date) -> Bool {
+        return max(start1, start2) <= min(end1, end2)
+    }
     
     
 
@@ -50,11 +57,19 @@ struct SessionAddView: View {
                 }
 
                 Button("Ajouter") {
-                    if name.isEmpty {
+                    errorMessage = nil
+
+                    guard !name.isEmpty else {
                         errorMessage = "Veuillez remplir tous les champs requis."
                         return
                     }
-                    // Créer la session
+
+                    if let active = activeSession,
+                       datesChevauchent(startDate, endDate, active.startDate, active.endDate) {
+                        errorMessage = "La période chevauche une session active existante."
+                        return
+                    }
+
                     let newSession = SessionCreate(
                         name: name,
                         start_date: startDate,
@@ -62,8 +77,11 @@ struct SessionAddView: View {
                         fees: fees,
                         commission: commission
                     )
-                    Task{await viewModel.createSession(newSession)}
-                    viewModel.closeAddForm()
+
+                    Task {
+                        await viewModel.createSession(newSession)
+                        viewModel.closeAddForm()
+                    }
                 }
             }
             .navigationTitle("Créer une Session")

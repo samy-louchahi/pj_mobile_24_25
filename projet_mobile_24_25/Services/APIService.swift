@@ -22,7 +22,7 @@ enum APIError: Error {
 /// Service pour gérer les appels REST à l'API
 class APIService {
     /// Base URL de ton backend
-    private let baseURL = "https://api-awi-depot-jeu.onrender.com/api"
+    private let baseURL = "https://api-awi-depot-jeu-backup.onrender.com/api"
     
     /// Récupération du token depuis le Keychain ou UserDefaults
     private func getToken() -> String? {

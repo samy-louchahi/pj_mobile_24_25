@@ -18,21 +18,15 @@ struct MainTabView: View {
                         Image(systemName: "person.3.fill")
                         Text("Utilisateurs")
                     }
-                GameListView()
+                GameAndStockTabView()
                     .tabItem {
                         Image(systemName: "dice.fill")
-                        Text("Jeux")
+                        Text("Jeux Et stocks")
                     }
                 DepotAndSaleManagerView()
                     .tabItem {
                         Image(systemName: "archivebox.fill")
                         Text("Dépôts et Ventes")
-                    }
-
-                StockView()
-                    .tabItem {
-                        Image(systemName: "shippingbox.fill")
-                        Text("Stock")
                     }
             }
 

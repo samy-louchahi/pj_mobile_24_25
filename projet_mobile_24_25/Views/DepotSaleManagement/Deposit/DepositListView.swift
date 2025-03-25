@@ -65,6 +65,6 @@ struct DepositListView: View {
             .onAppear {
                 Task {await viewModel.fetchDeposits()}
             }
-        }
+        }.background(Color(UIColor.secondarySystemBackground))
     }
 }

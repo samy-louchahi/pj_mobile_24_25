@@ -20,6 +20,7 @@ class GameViewModel: ObservableObject {
 
     // Filtrage
     @Published var searchPublisher: String = ""
+    @Published var searchName: String = ""
     @Published var filterHasStock: Bool = false
     // Stocks par jeu
     @Published var gameStocks: [Int: [Stock]] = [:]
@@ -101,7 +102,11 @@ class GameViewModel: ObservableObject {
         if !searchPublisher.isEmpty {
             list = list.filter { $0.publisher.lowercased().contains(searchPublisher.lowercased()) }
         }
-
+        
+        if !searchName.isEmpty {
+            list = list.filter { $0.name.lowercased().contains(searchName.lowercased()) }
+        }
+        
         if filterHasStock {
             list = list.filter { game in
                 guard let stocks = gameStocks[game.id] else { return false }
