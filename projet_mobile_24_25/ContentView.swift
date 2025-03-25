@@ -8,17 +8,19 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @EnvironmentObject var authViewModel: AuthViewModel
 
-#Preview {
-    ContentView()
+    var body: some View {
+        ZStack {
+            if authViewModel.isLoggedIn {
+                MainTabView()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .environmentObject(authViewModel)
+            } else {
+                LoginView()
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: authViewModel.isLoggedIn)
+    }
 }

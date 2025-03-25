@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct projet_mobile_24_25App: App {
+    @StateObject private var authViewModel = AuthViewModel()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authViewModel)
         }
     }
 }
