@@ -97,7 +97,6 @@ class AuthViewModel: ObservableObject {
 
             // 1️⃣ Vérifier si le token est un JWT valide et non expiré
             if !isTokenValid(token) {
-                print("Token expiré ou invalide.")
                 await logout()
                 return
             }
@@ -119,7 +118,6 @@ class AuthViewModel: ObservableObject {
                     return expirationDate > Date()
                 }
             } catch {
-                print("Erreur lors de la lecture du JWT : \(error)")
                 return false
             }
 
@@ -132,11 +130,9 @@ class AuthViewModel: ObservableObject {
                 if response.isValid {
                     isLoggedIn = true
                 } else {
-                    print("Token invalide, déconnexion.")
                     await logout()
                 }
             } catch {
-                print("Erreur de validation du token : \(error)")
                 await logout()
             }
         }

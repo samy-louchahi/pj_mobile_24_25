@@ -20,7 +20,6 @@ class GestionnaireViewModel: ObservableObject {
         do {
             isLoading = true
             self.gestionnaires = try await service.getGestionnaires()
-            print("➡️ \(self.gestionnaires.count) gestionnaire(s) récupéré(s)")
         } catch {
             self.errorMessage = "Erreur de chargement : \(error.localizedDescription)"
         }

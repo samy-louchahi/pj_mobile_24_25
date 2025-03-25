@@ -51,6 +51,12 @@ struct SellerSectionView: View {
                     .padding(.top, 12)
                 }
             }
+        }.toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("+ Ajouter") {
+                    viewModel.openAddForm()
+                }
+            }
         }
         .sheet(isPresented: $viewModel.showForm) {
             SellerFormView(viewModel: viewModel)

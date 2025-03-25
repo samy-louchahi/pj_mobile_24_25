@@ -45,7 +45,6 @@ class APIService {
 
         }
 
-        print("📡 Envoi requête GET → \(request.url!.absoluteString)")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -55,7 +54,6 @@ class APIService {
                 throw APIError.invalidResponse
             }
 
-            print("✅ Code HTTP : \(httpResponse.statusCode)")
 
             if !(200...299).contains(httpResponse.statusCode) {
 

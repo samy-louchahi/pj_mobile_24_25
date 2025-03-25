@@ -42,7 +42,6 @@ class StatisticViewModel: ObservableObject {
             self.vendorShares = try await shares
             self.vendorStats = try await stats
         } catch {
-            print("❌ Erreur stats API :", error)
             errorMessage = "Erreur de chargement des statistiques : \(error.localizedDescription)"
         }
     }

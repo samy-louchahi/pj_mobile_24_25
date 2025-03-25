@@ -88,7 +88,6 @@ struct SaleCardView: View {
             .buttonStyle(BorderlessButtonStyle())
             .foregroundColor(.gray)
 
-            // 📦 Liste des jeux
             if showDetails, let details = enrichedDetails {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(details) { local in

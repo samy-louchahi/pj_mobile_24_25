@@ -9,6 +9,12 @@
 import Foundation
 import SwiftUI
 
+struct StockParJeu: Identifiable {
+    let id = UUID()
+    let nomJeu: String
+    let quantite: Int
+}
+
 @MainActor
 class SellerDetailViewModel: ObservableObject {
     @Published var deposits: [Deposit] = []
@@ -18,6 +24,8 @@ class SellerDetailViewModel: ObservableObject {
     @Published var totalDepositFees: Double = 0
     @Published var totalCommission: Double = 0
     @Published var montantARetourner: Double = 0
+   // @Published var finalizedSaleDetails: [SaleDetail] = []
+    @Published var stocksParJeu: [StockParJeu] = []
 
     let seller: Seller
 
@@ -38,7 +46,7 @@ class SellerDetailViewModel: ObservableObject {
 
             self.totalDepositFees = deposits.reduce(0) { acc, deposit in
                 let gameFees = deposit.depositGames?.reduce(0) { gameAcc, dg in
-                    let exemplaires = dg.exemplaires!.values
+                    let exemplaires = dg.exemplaires?.map { $0.value } ?? []
                     let totalValue = exemplaires.reduce(0) { $0 + ($1.price ?? 0) }
                     return gameAcc + (totalValue * dg.fees / 100)
                 } ?? 0
@@ -66,6 +74,26 @@ class SellerDetailViewModel: ObservableObject {
             self.totalSales = salesTotal
             self.totalCommission = commissionTotal
             self.montantARetourner = salesTotal - commissionTotal
+            
+            var stockDict: [String: Int] = [:]
+
+            for deposit in deposits {
+                for dg in deposit.depositGames ?? [] {
+                    let exemplaires = dg.exemplaires ?? [:]
+                    let vendus = saleDetails
+                        .filter { $0.depositGameId == dg.depositGameId }
+                        .flatMap { $0.selectedKeys ?? [] }
+
+                    for (key, _) in exemplaires where !vendus.contains(key) {
+                        let nomJeu = dg.game?.name ?? "Jeu inconnu"
+                        stockDict[nomJeu, default: 0] += 1
+                    }
+                }
+            }
+
+            self.stocksParJeu = stockDict.map { StockParJeu(nomJeu: $0.key, quantite: $0.value) }
+            
+            print("✅ fetchAll lancé pour seller : \(seller.name ?? "nil")")
 
         } catch {
             print("❌ Erreur chargement SellerDetailViewModel: \(error.localizedDescription)")
