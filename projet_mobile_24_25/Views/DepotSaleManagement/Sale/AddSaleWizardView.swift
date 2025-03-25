@@ -18,6 +18,8 @@ struct ChosenSaleGame: Identifiable {
 struct SaleStep1View: View {
     @Binding var selectedSeller: Int?
     @Binding var selectedBuyer: Int?
+    let onCancel: () -> Void
+
     let sellers: [Seller]
     let buyers: [Buyer]
     let activeSession: Session?
@@ -53,17 +55,32 @@ struct SaleStep1View: View {
             if let error = localError {
                 Text(error).foregroundColor(.red)
             }
-            Button("Étape Suivante") {
-                if selectedSeller == nil {
-                    localError = "Veuillez sélectionner un vendeur."
-                } else {
-                    localError = nil
-                    onNext()
+            HStack {
+                Button("Annuler") {
+                    handleClose()
                 }
+                .foregroundColor(.red)
+                .buttonStyle(BorderlessButtonStyle())
+
+                Spacer()
+
+                Button("Étape Suivante") {
+                    if selectedSeller == nil {
+                        localError = "Veuillez sélectionner un vendeur."
+                    } else {
+                        localError = nil
+                        onNext()
+                    }
+                }
+                .buttonStyle(BorderlessButtonStyle())
             }
         }
         .navigationTitle("Étape 1")
     }
+    private func handleClose() {
+       onCancel()
+    }
+
 }
 struct SaleStep2View: View {
     let depositGames: [DepositGame]
@@ -128,6 +145,7 @@ struct SaleStep3View: View {
     let saleDate: Date
     let saleStatus: String
     let localDetails: [LocalSaleDetail]
+    @Environment(\.dismiss) var dismiss
     let onConfirm: () -> Void
     let onBack: () -> Void
 
@@ -154,8 +172,13 @@ struct SaleStep3View: View {
 
             HStack {
                 Button("Retour") { onBack() }
+                    .buttonStyle(BorderlessButtonStyle())
                 Spacer()
-                Button("Confirmer la vente") { onConfirm() }
+                Button("Confirmer la vente") {
+                    onConfirm()
+                    dismiss()
+                }
+                .buttonStyle(BorderlessButtonStyle())
             }
         }
         .navigationTitle("Étape 3")
@@ -200,6 +223,7 @@ struct AddSaleWizardView: View {
     @State private var saleStatus: String = "en cours"
     @State private var chosenGames: [ChosenSaleGame] = []
     @State private var localDetails: [LocalSaleDetail] = []
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         NavigationView {
@@ -208,6 +232,7 @@ struct AddSaleWizardView: View {
                     SaleStep1View(
                         selectedSeller: $selectedSeller,
                         selectedBuyer: $selectedBuyer,
+                        onCancel: { dismiss() },
                         sellers: viewModel.sellers,
                         buyers: viewModel.buyers,
                         activeSession: viewModel.activeSession,
@@ -284,6 +309,7 @@ struct AddSaleWizardView: View {
                     sale_date: formattedDate(saleDate)
                 )
                  await viewModel.createSalesOperation(saleOperation)
+                handleClose()
 
                 print("Vente et détails créés avec succès !")
             }
@@ -308,4 +334,8 @@ struct AddSaleWizardView: View {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter.string(from: date)
     }
+    private func handleClose() {
+        dismiss()
+    }
 }
+

@@ -101,7 +101,9 @@ struct SaleListView: View {
                 .buttonStyle(BorderlessButtonStyle())
                 .padding(.bottom)
             }
-            .sheet(isPresented: $showAddSale) {
+            .sheet(isPresented: $showAddSale, onDismiss: {
+                Task { await viewModel.fetchSales() } 
+            }) {
                 AddSaleWizardView(viewModel: viewModel)
             }
             .sheet(isPresented: $showUpdateSale) {

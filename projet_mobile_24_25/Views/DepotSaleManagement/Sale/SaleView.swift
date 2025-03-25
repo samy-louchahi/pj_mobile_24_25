@@ -38,7 +38,12 @@ struct SaleView: View {
                 SaleListView(viewModel: viewModel)
             }
         }
-        .sheet(isPresented: $showAddSaleWizard) {
+        .sheet(isPresented: $showAddSaleWizard, onDismiss: {
+            Task {
+                await viewModel.fetchInitialData()
+                await viewModel.fetchSales()
+            }
+        }) {
             AddSaleWizardView(viewModel: viewModel)
         }
         .onAppear{
