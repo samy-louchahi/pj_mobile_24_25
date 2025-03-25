@@ -24,7 +24,6 @@ class SellerDetailViewModel: ObservableObject {
     @Published var totalDepositFees: Double = 0
     @Published var totalCommission: Double = 0
     @Published var montantARetourner: Double = 0
-   // @Published var finalizedSaleDetails: [SaleDetail] = []
     @Published var stocksParJeu: [StockParJeu] = []
 
     let seller: Seller
@@ -93,7 +92,6 @@ class SellerDetailViewModel: ObservableObject {
 
             self.stocksParJeu = stockDict.map { StockParJeu(nomJeu: $0.key, quantite: $0.value) }
             
-            print("✅ fetchAll lancé pour seller : \(seller.name ?? "nil")")
 
         } catch {
             print("❌ Erreur chargement SellerDetailViewModel: \(error.localizedDescription)")
