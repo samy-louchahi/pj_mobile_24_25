@@ -148,6 +148,7 @@ struct SaleStep3View: View {
     @Environment(\.dismiss) var dismiss
     let onConfirm: () -> Void
     let onBack: () -> Void
+    let isSubmitting: Bool
 
     var body: some View {
         Form {
@@ -179,6 +180,7 @@ struct SaleStep3View: View {
                     dismiss()
                 }
                 .buttonStyle(BorderlessButtonStyle())
+                .disabled(isSubmitting)
             }
         }
         .navigationTitle("Étape 3")
@@ -223,6 +225,7 @@ struct AddSaleWizardView: View {
     @State private var saleStatus: String = "en cours"
     @State private var chosenGames: [ChosenSaleGame] = []
     @State private var localDetails: [LocalSaleDetail] = []
+    @State private var isSubmitting: Bool = false
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -261,7 +264,8 @@ struct AddSaleWizardView: View {
                         saleStatus: saleStatus,
                         localDetails: localDetails,
                         onConfirm: { finalizeSale() },
-                        onBack: { currentStep = 2 }
+                        onBack: { currentStep = 2 },
+                        isSubmitting: isSubmitting
                     )
                 }
             }
@@ -301,7 +305,7 @@ struct AddSaleWizardView: View {
                 }
 
                 // Étape 3 : Créer l'opération de vente (commission, statut)
-                let commission = 0.1 // Exemple de commission (10%)
+                let commission =  viewModel.activeSession?.commission ?? 0.0
                 let saleOperation = SaleOperationCreate(
                     sale_id: createdSale!.saleId,
                     commission: commission,
@@ -309,6 +313,7 @@ struct AddSaleWizardView: View {
                     sale_date: formattedDate(saleDate)
                 )
                  await viewModel.createSalesOperation(saleOperation)
+                isSubmitting = false
                 handleClose()
 
                 print("Vente et détails créés avec succès !")

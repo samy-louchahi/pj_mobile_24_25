@@ -51,7 +51,7 @@ struct PDFUtils {
         
         return data
     }
-    static func generateInvoicePdf(for sale: Sale, seller: Seller?, localDetails: [LocalSaleDetail]? = nil) -> Data? {
+    static func generateInvoicePdf(for sale: Sale, seller: Seller?, buyer: Buyer? = nil, localDetails: [LocalSaleDetail]? = nil) -> Data? {
             let pdfMetaData = [
                 kCGPDFContextCreator: "Gestion Ventes",
                 kCGPDFContextAuthor: "Ton App",
@@ -79,6 +79,12 @@ struct PDFUtils {
                 draw("Vente ID : \(sale.saleId)")
                 draw("Date : \(formattedDate(sale.saleDate))")
                 draw("Vendeur : \(seller?.name ?? "Nom inconnu")")
+                if let buyer = buyer {
+                    draw("Acheteur : \(buyer.name)")
+                    if let address = buyer.address {
+                        draw("Adresse : \(address)")
+                    }
+                }
                 draw("Statut : \(sale.saleStatus.rawValue.capitalized)")
                 y += 12
                 draw("Jeux vendus :", font: .boldSystemFont(ofSize: 18))

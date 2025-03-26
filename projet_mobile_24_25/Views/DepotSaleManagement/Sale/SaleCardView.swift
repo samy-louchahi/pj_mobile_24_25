@@ -37,7 +37,6 @@ struct SaleCardView: View {
 
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
-            // 🔖 En-tête
             HStack {
                 Text("Vente #\(sale.saleId)")
                     .font(.title3)
@@ -169,7 +168,7 @@ struct SaleCardView: View {
     }
 
     private func handleDownloadInvoice() {
-        if let data = PDFUtils.generateInvoicePdf(for: sale, seller: seller, localDetails: localDetails) {
+        if let data = PDFUtils.generateInvoicePdf(for: sale, seller: seller, buyer: sale.buyer, localDetails: localDetails) {
             PDFUtils.sharePdf(data, "Facture_\(sale.saleId).pdf")
         }
     }
